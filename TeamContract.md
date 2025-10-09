@@ -59,3 +59,8 @@ By signing below, we acknowledge that we have read, discussed, and agreed to the
 Team Member Signatures:
 
 (type names here)
+Subhan Akbar Khan
+Adam Lam
+Shuwei Zhou
+John Jianh
+Sean Zhang
