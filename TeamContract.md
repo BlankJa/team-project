@@ -64,3 +64,4 @@ Adam Lam
 Shuwei Zhou
 John Jianh
 Sean Zhang
+Ariel Pinaringan
