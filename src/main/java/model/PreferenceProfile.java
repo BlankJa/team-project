@@ -11,14 +11,14 @@ public class PreferenceProfile {
     public PreferenceProfile() {
         this.interests = new String[0];
         this.locations = new String[0];
-        this.cities = new String[]{"New York", "Washington", "Vancouver", "Toronto", "Sydney", "London", "Paris", "Tokyo", "Toronto", "Berlin", "Rome", "Barcelona", "Amsterdam"};
+        this.cities = new String[]{"Toronto", "Vancouver", "Ottawa", "New York"};
         this.radius = 10.0f;
     }
 
     public PreferenceProfile(String[] interests, String[] locations, float radius, String[] cities) {
         this.interests = interests != null ? interests : new String[0];
         this.locations = locations != null ? locations : new String[0];
-        this.cities = cities != null ? cities : new String[]{"New York", "Washington", "Vancouver", "Toronto", "Sydney", "London", "Paris", "Tokyo", "Toronto", "Berlin", "Rome", "Barcelona", "Amsterdam"};
+        this.cities = cities != null ? cities : new String[]{"Toronto", "Vancouver", "Ottawa", "New York"};
         this.radius = radius;
     }
 
@@ -32,7 +32,7 @@ public class PreferenceProfile {
     }
 
     public void setCities(String[] cities) {
-        this.cities = cities != null ? cities : new String[]{"New York", "Washington", "Vancouver", "Toronto", "Sydney", "London", "Paris", "Tokyo", "Toronto", "Berlin", "Rome", "Barcelona", "Amsterdam"};
+        this.cities = cities != null ? cities : new String[]{"Toronto", "Vancouver", "Ottawa", "New York"};
     }
 
     public void setRadius(float radius) {

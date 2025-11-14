@@ -222,7 +222,7 @@ public class DatabaseService {
                 if (citiesStr != null && !citiesStr.isEmpty()) {
                     cities = citiesStr.split("\\|");
                 } else {
-                    cities = new String[]{"New York", "Washington", "Vancouver", "Toronto", "Sydney", "London", "Paris", "Tokyo", "Toronto", "Berlin", "Rome", "Barcelona", "Amsterdam"};
+                    cities = new String[]{"New York", "Vancouver", "Toronto"};
                 }
 
                 return new PreferenceProfile(interests, locations, radius, cities);

@@ -202,7 +202,7 @@ public class PreferenceFrame extends JFrame {
 
         // Add default cities if list is empty
         if (citiesModel.isEmpty()) {
-            String[] defaultCities = {"New York", "Washington", "Vancouver", "Toronto", "Sydney", "London", "Paris", "Tokyo", "Toronto", "Berlin", "Rome", "Barcelona", "Amsterdam"};
+            String[] defaultCities = {"Toronto", "Vancouver", "Ottawa", "New York"};
             for (String city : defaultCities) {
                 citiesModel.addElement(city);
                 preferredCityComboBox.addItem(city);
