@@ -1,4 +1,4 @@
-package model;
+package entities;
 
 import java.util.Arrays;
 
@@ -11,14 +11,14 @@ public class PreferenceProfile {
     public PreferenceProfile() {
         this.interests = new String[0];
         this.locations = new String[0];
-        this.cities = new String[]{"Toronto", "Vancouver", "Ottawa", "New York"};
-        this.radius = 10.0f;
+        this.cities = new String[]{"Vancouver", "Toronto", "New York", "Ottawa"};
+        this.radius = 1.0f;
     }
 
     public PreferenceProfile(String[] interests, String[] locations, float radius, String[] cities) {
         this.interests = interests != null ? interests : new String[0];
         this.locations = locations != null ? locations : new String[0];
-        this.cities = cities != null ? cities : new String[]{"Toronto", "Vancouver", "Ottawa", "New York"};
+        this.cities = cities != null && cities.length > 0 ? cities : new String[]{"Vancouver", "Toronto", "New York", "Ottawa"};
         this.radius = radius;
     }
 
@@ -32,7 +32,7 @@ public class PreferenceProfile {
     }
 
     public void setCities(String[] cities) {
-        this.cities = cities != null ? cities : new String[]{"Toronto", "Vancouver", "Ottawa", "New York"};
+        this.cities = cities != null && cities.length > 0 ? cities : new String[]{"Vancouver", "Toronto", "New York", "Ottawa"};
     }
 
     public void setRadius(float radius) {

@@ -1,16 +1,21 @@
-package ui;
+package frameworks_and_drivers.swing.frames;
 
-import model.User;
+import entities.User;
+import interface_adapters.presenters.MainDashboardPresenter;
+import interface_adapters.views.MainDashboardView;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
-public class MainDashboard extends JFrame {
+public class MainDashboardFrame extends JFrame implements MainDashboardView {
     private User currentUser;
+    private MainDashboardPresenter presenter;
 
-    public MainDashboard(User user) {
+    public MainDashboardFrame(User user) {
         this.currentUser = user;
+        this.presenter = new MainDashboardPresenter(this);
         initializeUI();
     }
 
@@ -37,21 +42,22 @@ public class MainDashboard extends JFrame {
         JButton logoutButton = new JButton("Logout");
         logoutButton.setBackground(Color.WHITE);
         logoutButton.setFocusPainted(false);
-        logoutButton.addActionListener(e -> logout());
+        logoutButton.addActionListener(e -> presenter.onLogoutClicked());
         headerPanel.add(logoutButton, BorderLayout.EAST);
 
         mainPanel.add(headerPanel, BorderLayout.NORTH);
 
-        // Content panel - Simple layout with only Set Preferences button
+        // Content panel - Simple centered layout
         JPanel contentPanel = new JPanel(new GridBagLayout());
         contentPanel.setBackground(new Color(240, 248, 255));
         contentPanel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
+
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.insets = new Insets(20, 20, 20, 20);
 
-        // Create feature button - Only Set Preferences
+        // Create preferences button
         JButton preferencesButton = createFeatureButton("Set Preferences", "🛠️",
                 "Set your travel preferences and interests", new Color(100, 149, 237));
 
@@ -59,8 +65,8 @@ public class MainDashboard extends JFrame {
 
         mainPanel.add(contentPanel, BorderLayout.CENTER);
 
-        // Add action listener for preferences button
-        preferencesButton.addActionListener(e -> openPreferenceFrame());
+        // Add action listener
+        preferencesButton.addActionListener(e -> presenter.onPreferencesClicked());
 
         add(mainPanel);
     }
@@ -111,19 +117,29 @@ public class MainDashboard extends JFrame {
         return button;
     }
 
-    private void openPreferenceFrame() {
-        PreferenceFrame preferenceFrame = new PreferenceFrame(currentUser);
-        preferenceFrame.setVisible(true);
+    @Override
+    public void showWelcomeMessage(String username) {
     }
 
-    private void logout() {
-        int result = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to logout?", "Logout", JOptionPane.YES_NO_OPTION);
+    @Override
+    public void showError(String message) {
+        JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+    }
 
-        if (result == JOptionPane.YES_OPTION) {
-            new LoginFrame().setVisible(true);
-            this.dispose();
-        }
+    @Override
+    public void navigateToLogin() {
+        SwingUtilities.invokeLater(() -> {
+            LoginFrame loginFrame = new LoginFrame(null); // Presenter will be injected via DI
+            loginFrame.setVisible(true);
+        });
+        dispose();
+    }
+
+    @Override
+    public void openPreferenceFrame() {
+        SwingUtilities.invokeLater(() -> {
+            PreferenceFrame preferenceFrame = new PreferenceFrame(currentUser);
+            preferenceFrame.setVisible(true);
+        });
     }
 }
-

@@ -1,10 +1,14 @@
 package main;
 
-import ui.LoginFrame;
+import frameworks_and_drivers.di.DependencyContainer;
+import frameworks_and_drivers.swing.frames.LoginFrame;
+
 import javax.swing.*;
 import java.io.File;
 
 public class TravelSchedulerApp {
+    private static DependencyContainer dependencyContainer;
+
     public static void main(String[] args) {
         // Initialize data directory
         initializeDataDirectory();
@@ -16,12 +20,22 @@ public class TravelSchedulerApp {
             System.err.println("Error setting look and feel: " + e.getMessage());
         }
 
-        // Start the application - open Login Frame
+        // Initialize dependency injection container
+        dependencyContainer = DependencyContainer.getInstance();
+
+        // Start the application
         SwingUtilities.invokeLater(() -> {
-            LoginFrame loginFrame = new LoginFrame();
+            LoginFrame loginFrame = dependencyContainer.provideLoginFrame();
             loginFrame.setVisible(true);
             loginFrame.setLocationRelativeTo(null); // Center the window
         });
+
+        // Add shutdown hook for cleanup
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            if (dependencyContainer != null) {
+                dependencyContainer.cleanup();
+            }
+        }));
     }
 
     private static void initializeDataDirectory() {
@@ -32,5 +46,9 @@ public class TravelSchedulerApp {
                 System.out.println("Created data directory: " + dataDir.getAbsolutePath());
             }
         }
+    }
+
+    public static DependencyContainer getDependencyContainer() {
+        return dependencyContainer;
     }
 }

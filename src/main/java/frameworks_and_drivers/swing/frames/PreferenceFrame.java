@@ -1,8 +1,11 @@
-package ui;
+package frameworks_and_drivers.swing.frames;
 
-import model.User;
-import model.PreferenceProfile;
-import service.DatabaseService;
+import entities.PreferenceProfile;
+import entities.User;
+import frameworks_and_drivers.di.DependencyContainer;
+import interface_adapters.presenters.PreferencePresenter;
+import interface_adapters.views.PreferenceView;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -12,9 +15,8 @@ import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
 
-public class PreferenceFrame extends JFrame {
+public class PreferenceFrame extends JFrame implements PreferenceView {
     private User currentUser;
-    private DatabaseService databaseService;
     private JComboBox<String> preferredCityComboBox;
     private JSlider radiusSlider;
     private JList<String> interestsList;
@@ -24,10 +26,11 @@ public class PreferenceFrame extends JFrame {
     private JButton addCityButton;
     private JButton removeCityButton;
     private DefaultListModel<String> citiesModel;
+    private PreferencePresenter presenter;
 
     public PreferenceFrame(User user) {
         this.currentUser = user;
-        this.databaseService = DatabaseService.getInstance();
+        this.presenter = new PreferencePresenter(this, DependencyContainer.getInstance().getUpdateUserPreferencesUseCase());
         initializeUI();
         loadCurrentPreferences();
     }
@@ -61,11 +64,13 @@ public class PreferenceFrame extends JFrame {
         saveButton.setBackground(new Color(70, 130, 180));
         saveButton.setForeground(Color.BLACK);
         saveButton.setFocusPainted(false);
+        saveButton.addActionListener(new SavePreferencesAction());
 
         cancelButton = new JButton("Cancel");
         cancelButton.setBackground(new Color(100, 149, 237));
         cancelButton.setForeground(Color.BLUE);
         cancelButton.setFocusPainted(false);
+        cancelButton.addActionListener(e -> dispose());
 
         buttonPanel.add(saveButton);
         buttonPanel.add(cancelButton);
@@ -73,9 +78,6 @@ public class PreferenceFrame extends JFrame {
         mainPanel.add(buttonPanel, BorderLayout.SOUTH);
 
         add(mainPanel);
-
-        saveButton.addActionListener(new SavePreferencesAction());
-        cancelButton.addActionListener(e -> dispose());
     }
 
     private JPanel createBasicPreferencesPanel() {
@@ -88,19 +90,18 @@ public class PreferenceFrame extends JFrame {
         panel.add(preferredCityComboBox);
 
         panel.add(new JLabel("Search Radius (km):"));
-        radiusSlider = new JSlider(1, 50, 10);
-        radiusSlider.setMajorTickSpacing(10);
+        radiusSlider = new JSlider(1, 5, 1);
+        radiusSlider.setMajorTickSpacing(1);
         radiusSlider.setMinorTickSpacing(1);
         radiusSlider.setPaintTicks(true);
         radiusSlider.setPaintLabels(true);
 
         Hashtable<Integer, JLabel> labelTable = new Hashtable<>();
         labelTable.put(1, new JLabel("1"));
-        labelTable.put(10, new JLabel("10"));
-        labelTable.put(20, new JLabel("20"));
-        labelTable.put(30, new JLabel("30"));
-        labelTable.put(40, new JLabel("40"));
-        labelTable.put(50, new JLabel("50"));
+        labelTable.put(2, new JLabel("2"));
+        labelTable.put(3, new JLabel("3"));
+        labelTable.put(4, new JLabel("4"));
+        labelTable.put(5, new JLabel("5"));
         radiusSlider.setLabelTable(labelTable);
         panel.add(radiusSlider);
 
@@ -144,36 +145,52 @@ public class PreferenceFrame extends JFrame {
         addCityButton.setBackground(new Color(70, 130, 180));
         addCityButton.setForeground(Color.BLACK);
         addCityButton.setFocusPainted(false);
+        addCityButton.addActionListener(new AddCityAction());
 
         removeCityButton = new JButton("Remove Selected");
         removeCityButton.setBackground(new Color(220, 80, 80));
         removeCityButton.setForeground(Color.BLACK);
         removeCityButton.setFocusPainted(false);
+        removeCityButton.addActionListener(new RemoveCityAction());
 
         buttonPanel.add(addCityButton);
         buttonPanel.add(removeCityButton);
 
         panel.add(buttonPanel, BorderLayout.SOUTH);
 
-        addCityButton.addActionListener(new AddCityAction());
-        removeCityButton.addActionListener(new RemoveCityAction());
-
         return panel;
     }
 
     private void loadCurrentPreferences() {
         PreferenceProfile profile = currentUser.getProfile();
+
         // Load cities from PreferenceProfile
         String[] cities = profile.getCities();
         citiesModel.clear();
+        boolean hasValidCities = false;
         for (String city : cities) {
-            if (!city.trim().isEmpty()) {
+            if (city != null && !city.trim().isEmpty()) {
+                citiesModel.addElement(city);
+                hasValidCities = true;
+            }
+        }
+        
+        // If no valid cities, set default cities
+        if (!hasValidCities) {
+            String[] defaultCities = {"Vancouver", "Toronto", "New York", "Ottawa"};
+            for (String city : defaultCities) {
                 citiesModel.addElement(city);
             }
         }
+        
         updatePreferredCityComboBox();
 
-        radiusSlider.setValue((int) profile.getRadius());
+        // Set radius, default to 1 if 0 or invalid
+        float radius = profile.getRadius();
+        if (radius <= 0 || radius > 5) {
+            radius = 1.0f;
+        }
+        radiusSlider.setValue((int) radius);
 
         String[] currentInterests = profile.getInterests();
         if (currentInterests.length > 0) {
@@ -202,7 +219,7 @@ public class PreferenceFrame extends JFrame {
 
         // Add default cities if list is empty
         if (citiesModel.isEmpty()) {
-            String[] defaultCities = {"Toronto", "Vancouver", "Ottawa", "New York"};
+            String[] defaultCities = {"Vancouver", "Toronto", "New York", "Ottawa"};
             for (String city : defaultCities) {
                 citiesModel.addElement(city);
                 preferredCityComboBox.addItem(city);
@@ -275,7 +292,7 @@ public class PreferenceFrame extends JFrame {
         public void actionPerformed(ActionEvent e) {
             String selectedCity = (String) preferredCityComboBox.getSelectedItem();
             float radius = radiusSlider.getValue();
-            java.util.List<String> selectedInterestsList = interestsList.getSelectedValuesList();
+            List<String> selectedInterestsList = interestsList.getSelectedValuesList();
             String[] selectedInterests = selectedInterestsList.toArray(new String[0]);
 
             // Get all cities from the list
@@ -300,39 +317,36 @@ public class PreferenceFrame extends JFrame {
                     selectedInterests, new String[]{selectedCity}, radius, citiesWithPreferredFirst
             );
 
-            // Update user profile
-            currentUser.updateProfile(newProfile);
-
-            // Save to database
-            boolean success = databaseService.updateUserPreferences(currentUser.getEmail(), newProfile);
-
-            if (success) {
-                JOptionPane.showMessageDialog(PreferenceFrame.this,
-                        "Preferences saved successfully!", "Success",
-                        JOptionPane.INFORMATION_MESSAGE);
-
-                // Display saved preferences summary
-                StringBuilder summary = new StringBuilder("Saved Preferences:\n\n");
-                summary.append("Preferred City: ").append(selectedCity != null ? selectedCity : "None").append("\n");
-                summary.append("Search Radius: ").append(radius).append(" km\n");
-                summary.append("Interests: ");
-                if (selectedInterests.length > 0) {
-                    summary.append(String.join(", ", selectedInterests));
-                } else {
-                    summary.append("None selected");
-                }
-                summary.append("\n");
-                summary.append("Cities: ").append(String.join(", ", citiesWithPreferredFirst));
-
-                JOptionPane.showMessageDialog(PreferenceFrame.this,
-                        summary.toString(), "Preferences Summary",
-                        JOptionPane.INFORMATION_MESSAGE);
-                dispose();
-            } else {
-                JOptionPane.showMessageDialog(PreferenceFrame.this,
-                        "Failed to save preferences. Please try again.", "Error",
-                        JOptionPane.ERROR_MESSAGE);
-            }
+            presenter.onSavePreferences(currentUser.getEmail(), newProfile);
         }
+    }
+
+    // PreferenceView interface implementation
+    @Override
+    public void showLoading() {
+        saveButton.setEnabled(false);
+        saveButton.setText("Saving...");
+    }
+
+    @Override
+    public void hideLoading() {
+        saveButton.setEnabled(true);
+        saveButton.setText("Save Preferences");
+    }
+
+    @Override
+    public void showError(String message) {
+        JOptionPane.showMessageDialog(PreferenceFrame.this, message, "Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+    @Override
+    public void showSuccess(String message) {
+        JOptionPane.showMessageDialog(PreferenceFrame.this, message, "Success", JOptionPane.INFORMATION_MESSAGE);
+        dispose();
+    }
+
+    @Override
+    public void updateUserProfile(PreferenceProfile profile) {
+        currentUser.setProfile(profile);
     }
 }

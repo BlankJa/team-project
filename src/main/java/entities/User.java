@@ -1,7 +1,4 @@
-package model;
-
-import java.util.ArrayList;
-import java.util.List;
+package entities;
 
 public class User {
     private String userName;
@@ -33,13 +30,8 @@ public class User {
     public PreferenceProfile getProfile() { return profile; }
     public void setProfile(PreferenceProfile profile) { this.profile = profile; }
 
-    public void updateProfile(PreferenceProfile profile) {
-        this.profile = profile;
-    }
-
     @Override
     public String toString() {
         return "User{userName='" + userName + "', email='" + email + "'}";
     }
 }
-

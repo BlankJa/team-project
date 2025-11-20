@@ -1,7 +1,10 @@
-package ui;
+package frameworks_and_drivers.swing.frames;
 
-import model.User;
-import service.DatabaseService;
+import entities.User;
+import frameworks_and_drivers.di.DependencyContainer;
+import interface_adapters.presenters.LoginPresenter;
+import interface_adapters.views.LoginView;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -12,16 +15,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
 
-public class LoginFrame extends JFrame {
-    public static final String CONFIG_FILE = "travel_scheduler.properties";
+public class LoginFrame extends JFrame implements LoginView {
     private JTextField emailField;
     private JPasswordField passwordField;
     private JButton loginButton;
     private JButton registerButton;
-    private DatabaseService databaseService;
+    private LoginPresenter presenter;
+    public static final String CONFIG_FILE = "travel_scheduler.properties";
 
-    public LoginFrame() {
-        databaseService = DatabaseService.getInstance();
+    public LoginFrame(LoginPresenter presenter) {
+        this.presenter = DependencyContainer.getInstance().provideLoginPresenter(this);;
         initializeUI();
         loadSavedEmail();
     }
@@ -101,7 +104,7 @@ public class LoginFrame extends JFrame {
 
         // Add action listeners
         loginButton.addActionListener(new LoginAction());
-        registerButton.addActionListener(e -> openRegistrationFrame());
+        registerButton.addActionListener(e -> presenter.onRegisterClicked());
 
         // Enter key listener for login
         passwordField.addActionListener(new LoginAction());
@@ -133,6 +136,7 @@ public class LoginFrame extends JFrame {
                 }
             }
         } catch (IOException e) {
+            // Ignore
         }
     }
 
@@ -151,41 +155,58 @@ public class LoginFrame extends JFrame {
         public void actionPerformed(ActionEvent e) {
             String email = emailField.getText().trim();
             String password = new String(passwordField.getPassword());
-
-            if (email.isEmpty() || password.isEmpty()) {
-                JOptionPane.showMessageDialog(LoginFrame.this,
-                        "Please enter both email and password",
-                        "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            User authenticatedUser = databaseService.authenticateUser(email, password);
-
-            if (authenticatedUser != null) {
-                saveEmail(email);
-                openMainDashboard(authenticatedUser);
-                dispose();
-            } else {
-                JOptionPane.showMessageDialog(LoginFrame.this,
-                        "Invalid email or password. Please try again or register a new account.",
-                        "Login Failed", JOptionPane.ERROR_MESSAGE);
-                passwordField.setText("");
-                passwordField.requestFocus();
-            }
+            presenter.onLoginClicked(email, password);
         }
     }
 
-    private void openRegistrationFrame() {
-        RegistrationFrame registrationFrame = new RegistrationFrame();
-        registrationFrame.setVisible(true);
-        this.dispose();
+    // LoginView interface implementation
+    @Override
+    public void showLoading() {
+        loginButton.setEnabled(false);
+        loginButton.setText("Logging in...");
     }
 
-    private void openMainDashboard(User user) {
+    @Override
+    public void hideLoading() {
+        loginButton.setEnabled(true);
+        loginButton.setText("Login");
+    }
+
+    @Override
+    public void showError(String message) {
+        JOptionPane.showMessageDialog(LoginFrame.this,
+                message,
+                "Error", JOptionPane.ERROR_MESSAGE);
+        passwordField.setText("");
+        passwordField.requestFocus();
+    }
+
+    @Override
+    public void showSuccess(String message) {
+        // Success message is handled in navigateToMainDashboard
+    }
+
+    @Override
+    public void navigateToMainDashboard(User user) {
+        saveEmail(user.getEmail());
         SwingUtilities.invokeLater(() -> {
-            MainDashboard dashboard = new MainDashboard(user);
+            MainDashboardFrame dashboard = new MainDashboardFrame(user);
             dashboard.setVisible(true);
         });
+        dispose();
+    }
+
+    @Override
+    public void navigateToRegistration() {
+        SwingUtilities.invokeLater(() -> {
+            RegistrationFrame registrationFrame = new RegistrationFrame();
+            registrationFrame.setVisible(true);
+        });
+        dispose();
+    }
+
+    @Override
+    public void clearForm() {
+        passwordField.setText("");
     }
 }
-
