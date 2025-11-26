@@ -16,10 +16,12 @@ public class AppFrame extends JFrame {
     // Controllers
     private final LoginController loginController;
     private final RegisterController registerController;
+    private final PreferencesController preferencesController;
 
     // ViewModels
     private final LoginViewModel loginVM;
     private final RegisterViewModel registerVM;
+    private final PreferencesViewModel preferencesVM;
 
     // Current user
     private Integer currentUserId = null;
@@ -32,24 +34,30 @@ public class AppFrame extends JFrame {
     // Screen names
     public static final String CARD_LOGIN = "login";
     public static final String CARD_REGISTER = "register";
+    public static final String CARD_PREFERENCES = "preferences";
 
     // Panels
     private LoginPanel loginPanel;
     private RegisterPanel registerPanel;
+    private PreferencesPanel preferencesPanel;
 
     public AppFrame(
             LoginController loginController,
             RegisterController registerController,
+            PreferencesController preferencesController,
             LoginViewModel loginVM,
-            RegisterViewModel registerVM
+            RegisterViewModel registerVM,
+            PreferencesViewModel preferencesVM
     ) {
         super("PlaceFinder");
 
         this.loginController = loginController;
         this.registerController = registerController;
+        this.preferencesController = preferencesController;
 
         this.loginVM = loginVM;
         this.registerVM = registerVM;
+        this.preferencesVM = preferencesVM;
 
         initUI();
     }
@@ -64,9 +72,11 @@ public class AppFrame extends JFrame {
 
         loginPanel = new LoginPanel(this, loginController, loginVM);
         registerPanel = new RegisterPanel(this, registerController, registerVM);
+        preferencesPanel = new PreferencesPanel(this, preferencesController, preferencesVM);
 
         mainPanel.add(loginPanel, CARD_LOGIN);
         mainPanel.add(registerPanel, CARD_REGISTER);
+        mainPanel.add(preferencesPanel, CARD_PREFERENCES);
 
         setContentPane(mainPanel);
         showLogin();
@@ -86,12 +96,18 @@ public class AppFrame extends JFrame {
         showCard(CARD_REGISTER);
     }
 
+    public void showPreferences() {
+        preferencesPanel.loadForCurrentUser();
+        showCard(CARD_PREFERENCES);
+    }
+
     // ===== Session management =====
 
     public void onLoginSuccess() {
         if (loginVM.getLoggedInUser() != null) {
             currentUserId = loginVM.getLoggedInUser().getId();
             currentUserName = loginVM.getLoggedInUser().getName();
+            showPreferences();
         }
     }
 
