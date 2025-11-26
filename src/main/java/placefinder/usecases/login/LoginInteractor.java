@@ -6,7 +6,8 @@ import placefinder.usecases.ports.UserGateway;
 
 /**
  * Interactor for the login use case.
- * Handles user authentication by verifying email and password against the database.
+ * Handles user authentication by verifying email and password against the database,
+ * and ensures the account's email is verified before allowing login.
  */
 public class LoginInteractor implements LoginInputBoundary {
 
@@ -31,6 +32,17 @@ public class LoginInteractor implements LoginInputBoundary {
                 presenter.present(new LoginOutputData(false, "Invalid email or password.", null));
                 return;
             }
+
+            // 🔴 NEW: block unverified users
+            if (!user.isVerified()) {
+                presenter.present(new LoginOutputData(
+                        false,
+                        "Please verify your email before signing in.",
+                        null
+                ));
+                return;
+            }
+
             presenter.present(new LoginOutputData(true, null, user));
         } catch (Exception e) {
             presenter.present(new LoginOutputData(false, e.getMessage(), null));

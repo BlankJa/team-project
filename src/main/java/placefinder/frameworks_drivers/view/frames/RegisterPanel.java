@@ -5,21 +5,26 @@ import placefinder.frameworks_drivers.view.components.swing.MyPasswordField;
 import placefinder.frameworks_drivers.view.components.swing.MyTextField;
 import placefinder.frameworks_drivers.view.components.swing.PanelRound;
 import placefinder.interface_adapters.controllers.RegisterController;
+import placefinder.interface_adapters.controllers.VerifyEmailController;
 import placefinder.interface_adapters.viewmodels.RegisterViewModel;
+import placefinder.interface_adapters.viewmodels.VerifyEmailViewModel;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 /**
- * Registration panel UI component.
- * Displays the registration form with name, email, password, and optional home city fields.
+ * Registration (sign up) panel.
+ * After a successful registration, it immediately opens the VerifyEmailDialog.
  */
 public class RegisterPanel extends JPanel {
 
     private final AppFrame appFrame;
     private final RegisterController registerController;
     private final RegisterViewModel registerVM;
+
+    private final VerifyEmailController verifyEmailController;
+    private final VerifyEmailViewModel verifyVM;
 
     private MyTextField nameField;
     private MyTextField emailField;
@@ -29,17 +34,21 @@ public class RegisterPanel extends JPanel {
 
     public RegisterPanel(AppFrame appFrame,
                          RegisterController registerController,
-                         RegisterViewModel registerVM) {
+                         RegisterViewModel registerVM,
+                         VerifyEmailController verifyEmailController,
+                         VerifyEmailViewModel verifyVM) {
         this.appFrame = appFrame;
         this.registerController = registerController;
         this.registerVM = registerVM;
+        this.verifyEmailController = verifyEmailController;
+        this.verifyVM = verifyVM;
         initUI();
     }
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        // Same gradient background as login
+        // Same gradient style as LoginPanel
         Graphics2D g2 = (Graphics2D) g;
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         Color c1 = new Color(7, 164, 121);
@@ -56,14 +65,14 @@ public class RegisterPanel extends JPanel {
         card.setOpaque(false);
         card.setBackground(new Color(255, 255, 255));
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.setBorder(new EmptyBorder(35, 60, 35, 60));
+        card.setBorder(new EmptyBorder(40, 60, 40, 60));
 
         JLabel title = new JLabel("Create Account", SwingConstants.CENTER);
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
         title.setFont(new Font("sansserif", Font.BOLD, 30));
         title.setForeground(new Color(7, 164, 121));
 
-        JLabel subtitle = new JLabel("Sign up to start planning your trips", SwingConstants.CENTER);
+        JLabel subtitle = new JLabel("Join PlaceFinder", SwingConstants.CENTER);
         subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
         subtitle.setFont(new Font("sansserif", Font.PLAIN, 13));
         subtitle.setForeground(new Color(120, 120, 120));
@@ -71,7 +80,7 @@ public class RegisterPanel extends JPanel {
         card.add(title);
         card.add(Box.createVerticalStrut(5));
         card.add(subtitle);
-        card.add(Box.createVerticalStrut(25));
+        card.add(Box.createVerticalStrut(30));
 
         nameField = new MyTextField();
         nameField.setHint("Name");
@@ -89,33 +98,34 @@ public class RegisterPanel extends JPanel {
         card.add(Box.createVerticalStrut(15));
 
         homeCityField = new MyTextField();
-        homeCityField.setHint("Home City (optional)");
+        homeCityField.setHint("Home city (optional)");
         card.add(homeCityField);
-        card.add(Box.createVerticalStrut(10));
+        card.add(Box.createVerticalStrut(15));
 
         messageLabel = new JLabel(" ", SwingConstants.CENTER);
         messageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        messageLabel.setFont(new Font("sansserif", Font.PLAIN, 12));
         messageLabel.setForeground(Color.RED);
+        messageLabel.setFont(new Font("sansserif", Font.PLAIN, 12));
         card.add(messageLabel);
         card.add(Box.createVerticalStrut(15));
 
-        Button registerButton = new Button();
-        registerButton.setText("SIGN UP");
-        registerButton.setBackground(new Color(7, 164, 121));
-        registerButton.setForeground(new Color(250, 250, 250));
-        registerButton.setFont(new Font("sansserif", Font.BOLD, 14));
-        registerButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        registerButton.setPreferredSize(new Dimension(200, 40));
-        registerButton.addActionListener(e -> doRegister());
-        card.add(registerButton);
+        Button signUpButton = new Button();
+        signUpButton.setText("SIGN UP");
+        signUpButton.setBackground(new Color(7, 164, 121));
+        signUpButton.setForeground(new Color(250, 250, 250));
+        signUpButton.setFont(new Font("sansserif", Font.BOLD, 14));
+        signUpButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        signUpButton.setPreferredSize(new Dimension(180, 40));
+        signUpButton.addActionListener(e -> doRegister());
+        card.add(signUpButton);
         card.add(Box.createVerticalStrut(20));
 
+        // "Already have an account? Sign in"
         JPanel bottomText = new JPanel();
         bottomText.setOpaque(false);
         bottomText.setLayout(new BoxLayout(bottomText, BoxLayout.X_AXIS));
-        JLabel haveAccountLabel = new JLabel("Already have an account? ");
-        haveAccountLabel.setForeground(new Color(100, 100, 100));
+        JLabel alreadyLabel = new JLabel("Already have an account? ");
+        alreadyLabel.setForeground(new Color(100, 100, 100));
         JButton loginLink = new JButton("Sign in");
         loginLink.setContentAreaFilled(false);
         loginLink.setBorderPainted(false);
@@ -124,9 +134,10 @@ public class RegisterPanel extends JPanel {
         loginLink.setForeground(new Color(7, 164, 121));
         loginLink.setFont(new Font("sansserif", Font.BOLD, 12));
         loginLink.addActionListener(e -> appFrame.showLogin());
-        bottomText.add(haveAccountLabel);
+        bottomText.add(alreadyLabel);
         bottomText.add(loginLink);
         bottomText.setAlignmentX(Component.CENTER_ALIGNMENT);
+
         card.add(bottomText);
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -147,14 +158,22 @@ public class RegisterPanel extends JPanel {
 
         registerController.register(name, email, password, homeCity);
 
-        messageLabel.setText(registerVM.getMessage() != null ? registerVM.getMessage() : "");
+        String msg = registerVM.getMessage();
+        messageLabel.setText(msg != null ? msg : " ");
 
         if (registerVM.isSuccess()) {
-            JOptionPane.showMessageDialog(this,
-                    "Registration successful. You can now log in.",
-                    "Success",
-                    JOptionPane.INFORMATION_MESSAGE);
-            appFrame.showLogin();
+            // Immediately open verification dialog with the EXACT email used
+            openVerifyDialog(email);
         }
+    }
+
+    private void openVerifyDialog(String email) {
+        VerifyEmailDialog dialog = new VerifyEmailDialog(
+                (Frame) SwingUtilities.getWindowAncestor(this),
+                verifyEmailController,
+                verifyVM,
+                email
+        );
+        dialog.setVisible(true);
     }
 }

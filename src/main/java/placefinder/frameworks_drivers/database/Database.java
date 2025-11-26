@@ -33,8 +33,23 @@ public class Database {
                     "name TEXT NOT NULL," +
                     "email TEXT NOT NULL UNIQUE," +
                     "password_hash TEXT NOT NULL," +
-                    "home_city TEXT" +
+                    "home_city TEXT," +
+                    "is_verified INTEGER NOT NULL DEFAULT 0," +
+                    "verification_code TEXT" +
                     ")");
+
+            // Backward compatibility: add columns if DB existed before we added them
+            try {
+                stmt.execute("ALTER TABLE users ADD COLUMN is_verified INTEGER NOT NULL DEFAULT 0");
+            } catch (SQLException e) {
+                // Column already exists, ignore
+            }
+
+            try {
+                stmt.execute("ALTER TABLE users ADD COLUMN verification_code TEXT");
+            } catch (SQLException e) {
+                // Column already exists, ignore
+            }
 
             stmt.execute("CREATE TABLE IF NOT EXISTS preferences (" +
                     "user_id INTEGER PRIMARY KEY," +
