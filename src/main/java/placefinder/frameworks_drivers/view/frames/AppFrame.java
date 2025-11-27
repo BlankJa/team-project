@@ -1,33 +1,42 @@
 package placefinder.frameworks_drivers.view.frames;
 
-import placefinder.interface_adapters.controllers.*;
-import placefinder.interface_adapters.viewmodels.*;
+import placefinder.interface_adapters.controllers.LoginController;
+import placefinder.interface_adapters.controllers.RegisterController;
+import placefinder.interface_adapters.controllers.VerifyEmailController;
+import placefinder.interface_adapters.controllers.PreferencesController;
+import placefinder.interface_adapters.viewmodels.LoginViewModel;
+import placefinder.interface_adapters.viewmodels.RegisterViewModel;
+import placefinder.interface_adapters.viewmodels.VerifyEmailViewModel;
+import placefinder.interface_adapters.viewmodels.PreferencesViewModel;
 
 import javax.swing.*;
 import java.awt.*;
 
 /**
- * Main application frame for PlaceFinder.
- * Manages the card layout for switching between login and registration panels.
- * Handles user session management and navigation between screens.
+ * Main application frame for PlaceFinder / TravelScheduler.
+ * - Manages the card layout for Login, Register, and Preferences screens.
+ * - Handles session management and navigation between screens.
+ * - Supports email verification (used inside RegisterPanel) and preferences.
  */
 public class AppFrame extends JFrame {
 
-    // Controllers
+    // ===== Controllers =====
     private final LoginController loginController;
     private final RegisterController registerController;
+    private final VerifyEmailController verifyEmailController;
     private final PreferencesController preferencesController;
 
-    // ViewModels
+    // ===== ViewModels =====
     private final LoginViewModel loginVM;
     private final RegisterViewModel registerVM;
+    private final VerifyEmailViewModel verifyVM;
     private final PreferencesViewModel preferencesVM;
 
-    // Current user
+    // ===== Session state =====
     private Integer currentUserId = null;
     private String currentUserName = null;
 
-    // Card layout for screens
+    // ===== Layout =====
     private CardLayout cardLayout;
     private JPanel mainPanel;
 
@@ -44,19 +53,23 @@ public class AppFrame extends JFrame {
     public AppFrame(
             LoginController loginController,
             RegisterController registerController,
+            VerifyEmailController verifyEmailController,
             PreferencesController preferencesController,
             LoginViewModel loginVM,
             RegisterViewModel registerVM,
+            VerifyEmailViewModel verifyVM,
             PreferencesViewModel preferencesVM
     ) {
         super("PlaceFinder");
 
         this.loginController = loginController;
         this.registerController = registerController;
+        this.verifyEmailController = verifyEmailController;
         this.preferencesController = preferencesController;
 
         this.loginVM = loginVM;
         this.registerVM = registerVM;
+        this.verifyVM = verifyVM;
         this.preferencesVM = preferencesVM;
 
         initUI();
@@ -70,9 +83,24 @@ public class AppFrame extends JFrame {
         cardLayout = new CardLayout();
         mainPanel = new JPanel(cardLayout);
 
+        // Login panel (same as before)
         loginPanel = new LoginPanel(this, loginController, loginVM);
-        registerPanel = new RegisterPanel(this, registerController, registerVM);
-        preferencesPanel = new PreferencesPanel(this, preferencesController, preferencesVM);
+
+        // Register panel – NOTE: uses verifyEmailController + verifyVM
+        registerPanel = new RegisterPanel(
+                this,
+                registerController,
+                registerVM,
+                verifyEmailController,
+                verifyVM
+        );
+
+        // Preferences panel – uses preferencesController + preferencesVM
+        preferencesPanel = new PreferencesPanel(
+                this,
+                preferencesController,
+                preferencesVM
+        );
 
         mainPanel.add(loginPanel, CARD_LOGIN);
         mainPanel.add(registerPanel, CARD_REGISTER);
@@ -97,6 +125,7 @@ public class AppFrame extends JFrame {
     }
 
     public void showPreferences() {
+        // Let the preferences screen refresh based on the current user
         preferencesPanel.loadForCurrentUser();
         showCard(CARD_PREFERENCES);
     }
@@ -107,6 +136,7 @@ public class AppFrame extends JFrame {
         if (loginVM.getLoggedInUser() != null) {
             currentUserId = loginVM.getLoggedInUser().getId();
             currentUserName = loginVM.getLoggedInUser().getName();
+            // After a successful login, go straight to preferences screen
             showPreferences();
         }
     }
