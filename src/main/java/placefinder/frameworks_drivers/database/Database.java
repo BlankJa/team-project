@@ -57,7 +57,7 @@ public class Database {
                     "selected_categories TEXT," +
                     "FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE" +
                     ")");
-            
+
             try {
                 stmt.execute("ALTER TABLE preferences ADD COLUMN selected_categories TEXT");
             } catch (SQLException e) {
@@ -85,7 +85,7 @@ public class Database {
                     "snapshot_categories TEXT," +
                     "FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE" +
                     ")");
-            
+
             try {
                 stmt.execute("ALTER TABLE plans ADD COLUMN snapshot_categories TEXT");
             } catch (SQLException e) {
