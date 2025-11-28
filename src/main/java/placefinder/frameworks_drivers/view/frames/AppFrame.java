@@ -1,13 +1,7 @@
 package placefinder.frameworks_drivers.view.frames;
 
-import placefinder.interface_adapters.controllers.LoginController;
-import placefinder.interface_adapters.controllers.RegisterController;
-import placefinder.interface_adapters.controllers.VerifyEmailController;
-import placefinder.interface_adapters.controllers.PreferencesController;
-import placefinder.interface_adapters.viewmodels.LoginViewModel;
-import placefinder.interface_adapters.viewmodels.RegisterViewModel;
-import placefinder.interface_adapters.viewmodels.VerifyEmailViewModel;
-import placefinder.interface_adapters.viewmodels.PreferencesViewModel;
+import placefinder.interface_adapters.controllers.*;
+import placefinder.interface_adapters.viewmodels.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -25,12 +19,15 @@ public class AppFrame extends JFrame {
     private final RegisterController registerController;
     private final VerifyEmailController verifyEmailController;
     private final PreferencesController preferencesController;
+    private final PlanCreationController planCreationController;
 
     // ===== ViewModels =====
     private final LoginViewModel loginVM;
     private final RegisterViewModel registerVM;
     private final VerifyEmailViewModel verifyVM;
     private final PreferencesViewModel preferencesVM;
+    private final PlanCreationViewModel planCreationVM;
+    private final PlanDetailsViewModel planDetailsVM;
 
     // ===== Session state =====
     private Integer currentUserId = null;
@@ -44,21 +41,28 @@ public class AppFrame extends JFrame {
     public static final String CARD_LOGIN = "login";
     public static final String CARD_REGISTER = "register";
     public static final String CARD_PREFERENCES = "preferences";
+    public static final String CARD_PLAN = "plan";
+    public static final String CARD_PLAN_DETAILS = "planDetails";
 
     // Panels
     private LoginPanel loginPanel;
     private RegisterPanel registerPanel;
     private PreferencesPanel preferencesPanel;
+    private PlanBuilderPanel planBuilderPanel;
+    private PlanDetailsPanel planDetailsPanel;
 
     public AppFrame(
             LoginController loginController,
             RegisterController registerController,
             VerifyEmailController verifyEmailController,
             PreferencesController preferencesController,
+            PlanCreationController planCreationController,
             LoginViewModel loginVM,
             RegisterViewModel registerVM,
             VerifyEmailViewModel verifyVM,
-            PreferencesViewModel preferencesVM
+            PreferencesViewModel preferencesVM,
+            PlanCreationViewModel planCreationVM,
+            PlanDetailsViewModel planDetailsVM
     ) {
         super("PlaceFinder");
 
@@ -66,11 +70,14 @@ public class AppFrame extends JFrame {
         this.registerController = registerController;
         this.verifyEmailController = verifyEmailController;
         this.preferencesController = preferencesController;
+        this.planCreationController = planCreationController;
 
         this.loginVM = loginVM;
         this.registerVM = registerVM;
         this.verifyVM = verifyVM;
         this.preferencesVM = preferencesVM;
+        this.planCreationVM = planCreationVM;
+        this.planDetailsVM = planDetailsVM;
 
         initUI();
     }
@@ -102,9 +109,18 @@ public class AppFrame extends JFrame {
                 preferencesVM
         );
 
+        // Plan Builder panel – uses planCreationController + planCreationVM
+        planBuilderPanel = new PlanBuilderPanel(
+                this,
+                planCreationController,
+                planCreationVM
+        );
+
         mainPanel.add(loginPanel, CARD_LOGIN);
         mainPanel.add(registerPanel, CARD_REGISTER);
         mainPanel.add(preferencesPanel, CARD_PREFERENCES);
+        mainPanel.add(planBuilderPanel, CARD_PLAN);
+        mainPanel.add(planDetailsPanel, CARD_PLAN_DETAILS);
 
         setContentPane(mainPanel);
         showLogin();
@@ -128,6 +144,16 @@ public class AppFrame extends JFrame {
         // Let the preferences screen refresh based on the current user
         preferencesPanel.loadForCurrentUser();
         showCard(CARD_PREFERENCES);
+    }
+
+    public void showNewPlan() {
+        planBuilderPanel.setupForNewPlan();
+        showCard(CARD_PLAN);
+    }
+
+    public void showPlanDetails() {
+        planDetailsPanel.showFromViewModel();
+        showCard(CARD_PLAN_DETAILS);
     }
 
     // ===== Session management =====
