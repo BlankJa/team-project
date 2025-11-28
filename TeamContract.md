@@ -62,6 +62,6 @@ Team Member Signatures:
 Subhan Akbar Khan
 Adam Lam
 Shuwei Zhou
-John Jianh
+John Jiang
 Sean Zhang
 Ariel Pinaringan
