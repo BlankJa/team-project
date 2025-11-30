@@ -10,6 +10,12 @@ import placefinder.frameworks_drivers.database.SmtpEmailGateway;
 import placefinder.usecases.ports.UserGateway;
 import placefinder.usecases.ports.PreferenceGateway;
 import placefinder.usecases.ports.EmailGateway;
+import placefinder.usecases.ports.PlacesGateway;
+
+import placefinder.frameworks_drivers.api.GeoapifyPlacesGateway;
+import placefinder.usecases.logging.PlacesApiLogger;
+import placefinder.usecases.logging.ConsolePlacesLogger;
+import placefinder.usecases.logging.InactivePlacesLogger;
 
 // login & register
 import placefinder.usecases.login.*;
@@ -42,6 +48,17 @@ public class TravelSchedulerApp {
             e.printStackTrace();
         }
 
+        // ========== API DEBUG CONFIGURATION ==========
+        // CHANGE THIS TO true TO SEE API LOGS, false TO HIDE THEM
+        boolean debugApiCalls = true;  // <- Toggle logging here
+
+        PlacesApiLogger apiLogger = debugApiCalls
+                ? new ConsolePlacesLogger()  // Shows detailed API debug logs
+                : new InactivePlacesLogger();     // No logging (production mode)
+
+        System.out.println("API Debug Mode: " + (debugApiCalls ? "ON" : "OFF"));
+        // =============================================
+
         // ========== GATEWAYS (Frameworks & Drivers) ==========
         UserGateway userGateway = new SqliteUserGatewayImpl();
         PreferenceGateway preferenceGateway = new SqlitePreferenceGatewayImpl();
@@ -50,6 +67,12 @@ public class TravelSchedulerApp {
         EmailGateway emailGateway = new SmtpEmailGateway(
                 "subhan.akbar908@gmail.com",    // <- your Gmail address
                 "eqrsbydralnvylzm"              // <- your 16-char app password (no spaces)
+        );
+
+        // Places API with optional debugging (configured above)
+        PlacesGateway placesGateway = new GeoapifyPlacesGateway(
+                "YOUR_GEOAPIFY_API_KEY_HERE",  // Get free key at https://www.geoapify.com/
+                apiLogger  // Uses the logger configured above (line 55)
         );
 
         // ========== VIEW MODELS ==========
