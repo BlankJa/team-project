@@ -27,7 +27,7 @@ public class DayTripExperienceCategories {
                 "tourism.sights",
                 "tourism.sights.castle",
                 "tourism.sights.ruines",
-                "tourism.sights.monument",
+                "tourism.sights.memorial.monument",
                 "tourism.sights.memorial",
                 "tourism.sights.battlefield",
                 "tourism.sights.fort",
@@ -35,16 +35,18 @@ public class DayTripExperienceCategories {
                 "tourism.sights.city_gate",
                 "tourism.sights.bridge",
                 "tourism.sights.tower",
+                "tourism.sights.archaeological_site",
                 "tourism.attraction",
                 "tourism.attraction.viewpoint",
                 "tourism.attraction.artwork",
                 "tourism.attraction.fountain",
-                "religion.place_of_worship",
-                "religion.place_of_worship.christian",
-                "religion.place_of_worship.jewish",
-                "religion.place_of_worship.muslim",
-                "religion.place_of_worship.buddhist",
-                "religion.place_of_worship.hindu"
+                "tourism.attraction.clock",
+                "tourism.sights.place_of_worship",
+                "tourism.sights.place_of_worship.church",
+                "tourism.sights.place_of_worship.cathedral",
+                "tourism.sights.place_of_worship.mosque",
+                "tourism.sights.place_of_worship.synagogue",
+                "tourism.sights.place_of_worship.temple"
         ));
 
         // Culture, History and Arts
@@ -62,20 +64,21 @@ public class DayTripExperienceCategories {
 
         // Nature, Parks and Outdoors
         CATEGORY_HIERARCHY.put("nature_parks_and_outdoors", Arrays.asList(
-                "natural.beach",
+                "beach",
                 "natural.forest",
                 "natural.water",
-                "natural.water.lake",
-                "natural.mountain",
+                "natural.water.spring",
+                "natural.water.hot_spring",
+                "natural.mountain.peak",
+                "natural.mountain.cliff",
                 "natural.protected_area",
-                "natural.sand",
-                "natural.wetland",
+                "natural.sand.dune",
                 "leisure.park",
-                "leisure.garden",
-                "leisure.nature_reserve",
-                "leisure.picnic_table",
-                "leisure.marina",
-                "leisure.dog_park"
+                "leisure.park.garden",
+                "leisure.park.nature_reserve",
+                "leisure.picnic.picnic_site",
+                "leisure.picnic.picnic_table",
+                "leisure.playground"
         ));
 
         // Family Entertainment and Activities
@@ -95,27 +98,24 @@ public class DayTripExperienceCategories {
         CATEGORY_HIERARCHY.put("active_recreation_and_sport", Arrays.asList(
                 "sport.stadium",
                 "sport.swimming_pool",
-                "sport.golf",
-                "sport.fitness",
-                "sport.tennis",
-                "sport.soccer",
-                "sport.basketball",
-                "sport.climbing",
-                "sport.cycling",
-                "sport.skateboard",
-                "sport.equestrian",
+                "sport.sports_centre",
+                "sport.fitness.fitness_centre",
+                "sport.fitness.fitness_station",
+                "sport.pitch",
+                "sport.track",
+                "sport.ice_rink",
+                "sport.horse_riding",
+                "sport.dive_centre",
                 "ski.lift",
-                "ski.station",
                 "activity.sport_club"
         ));
 
         // Relaxation and Wellness
         CATEGORY_HIERARCHY.put("relaxation_and_wellness", Arrays.asList(
                 "leisure.spa",
-                "leisure.sauna",
-                "leisure.beach_resort",
-                "leisure.hot_spring",
-                "leisure.fishing"
+                "leisure.spa.sauna",
+                "beach.beach_resort",
+                "natural.water.hot_spring"
         ));
 
         // Shopping Destinations
@@ -124,11 +124,11 @@ public class DayTripExperienceCategories {
                 "commercial.marketplace",
                 "commercial.department_store",
                 "commercial.gift_and_souvenir",
-                "commercial.clothing.boutique",
+                "commercial.clothing",
                 "commercial.clothing.shoes",
                 "commercial.clothing.accessories",
                 "commercial.jewelry",
-                "commercial.perfumery",
+                "commercial.health_and_beauty.cosmetics",
                 "commercial.hobby",
                 "commercial.hobby.games",
                 "commercial.hobby.music",
@@ -139,7 +139,6 @@ public class DayTripExperienceCategories {
         // Food and Drink Experiences
         CATEGORY_HIERARCHY.put("food_and_drink_experiences", Arrays.asList(
                 "catering.restaurant",
-                "catering.restaurant.fine_dining",
                 "catering.restaurant.steak_house",
                 "catering.restaurant.seafood",
                 "catering.restaurant.italian",
@@ -155,9 +154,7 @@ public class DayTripExperienceCategories {
                 "catering.restaurant.spanish",
                 "catering.restaurant.korean",
                 "catering.restaurant.turkish",
-                "catering.restaurant.bbq",
-                "catering.restaurant.vegan",
-                "catering.restaurant.vegetarian",
+                "catering.restaurant.barbecue",
                 "catering.cafe",
                 "catering.cafe.coffee_shop",
                 "catering.cafe.bubble_tea",
@@ -167,16 +164,17 @@ public class DayTripExperienceCategories {
                 "catering.bar",
                 "catering.biergarten",
                 "catering.taproom",
-                "commercial.food_and_drink.wine",
+                "commercial.food_and_drink.drinks",
                 "commercial.food_and_drink.chocolate",
                 "commercial.food_and_drink.bakery"
         ));
 
         // Nightlife and Adult
         CATEGORY_HIERARCHY.put("nightlife_and_adult", Arrays.asList(
-                "adult.casino",
                 "adult.nightclub",
-                "catering.bar"
+                "adult.casino",
+                "catering.bar",
+                "catering.pub"
         ));
     }
 

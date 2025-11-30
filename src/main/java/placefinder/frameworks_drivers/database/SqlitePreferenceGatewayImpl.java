@@ -1,5 +1,6 @@
 package placefinder.frameworks_drivers.database;
 
+import placefinder.entities.DayTripExperienceCategories;
 import placefinder.entities.FavoriteLocation;
 import placefinder.entities.PreferenceProfile;
 import placefinder.usecases.ports.PreferenceGateway;
@@ -131,9 +132,12 @@ public class SqlitePreferenceGatewayImpl implements PreferenceGateway {
                 String mainCategory = parts[0].trim();
                 String subCategoriesStr = parts[1].trim();
                 if (!mainCategory.isEmpty() && !subCategoriesStr.isEmpty()) {
+                    // Get valid sub-categories for this main category
+                    List<String> validSubCategories = DayTripExperienceCategories.getSubCategories(mainCategory);
                     List<String> subCategories = Arrays.stream(subCategoriesStr.split(","))
                             .map(String::trim)
                             .filter(s -> !s.isEmpty())
+                            .filter(validSubCategories::contains)  // Only keep valid sub-categories
                             .collect(Collectors.toList());
                     if (!subCategories.isEmpty()) {
                         result.put(mainCategory, subCategories);
