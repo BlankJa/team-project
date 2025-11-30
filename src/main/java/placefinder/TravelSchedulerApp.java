@@ -27,9 +27,10 @@ import placefinder.usecases.preferences.*;
 // verify email
 import placefinder.usecases.verify.*;
 
-// interface adapters
+// controllers + viewmodels + presenters
 import placefinder.interface_adapters.controllers.*;
 import placefinder.interface_adapters.viewmodels.*;
+import placefinder.interface_adapters.presenters.*;
 
 // UI
 import placefinder.frameworks_drivers.view.frames.AppFrame;
@@ -53,8 +54,8 @@ public class TravelSchedulerApp {
         boolean debugApiCalls = true;  // <- Toggle logging here
 
         PlacesApiLogger apiLogger = debugApiCalls
-                ? new ConsolePlacesLogger()  // Shows detailed API debug logs
-                : new InactivePlacesLogger();     // No logging (production mode)
+                ? new ConsolePlacesLogger()   // Shows detailed API debug logs
+                : new InactivePlacesLogger();  // No logging (production mode)
 
         System.out.println("API Debug Mode: " + (debugApiCalls ? "ON" : "OFF"));
         // =============================================
@@ -65,15 +66,16 @@ public class TravelSchedulerApp {
 
         // Sender email account for verification codes
         EmailGateway emailGateway = new SmtpEmailGateway(
-                "subhan.akbar908@gmail.com",    // <- your Gmail address
-                "eqrsbydralnvylzm"              // <- your 16-char app password (no spaces)
+                "subhan.akbar908@gmail.com",    // your Gmail address
+                "eqrsbydralnvylzm"              // your 16-char app password
         );
 
         // Places API with optional debugging (configured above)
         PlacesGateway placesGateway = new GeoapifyPlacesGateway(
-                "YOUR_GEOAPIFY_API_KEY_HERE",  // Get free key at https://www.geoapify.com/
-                apiLogger  // Uses the logger configured above (line 55)
+                "YOUR_GEOAPIFY_API_KEY_HERE",   // Get free key at Geoapify
+                apiLogger                       // Uses the logger configured above
         );
+        // (placesGateway is ready to be used by future use cases)
 
         // ========== VIEW MODELS ==========
         LoginViewModel loginVM = new LoginViewModel();
@@ -84,76 +86,33 @@ public class TravelSchedulerApp {
         // ========== PRESENTERS, INTERACTORS, CONTROLLERS ==========
 
         // ---- Login ----
-        LoginOutputBoundary loginPresenter = new LoginOutputBoundary() {
-            @Override
-            public void present(LoginOutputData outputData) {
-                if (outputData.isSuccess()) {
-                    loginVM.setLoggedInUser(outputData.getUser());
-                    loginVM.setErrorMessage(null);
-                } else {
-                    loginVM.setLoggedInUser(null);
-                    loginVM.setErrorMessage(outputData.getMessage());
-                }
-            }
-        };
+        LoginPresenter loginPresenter = new LoginPresenter(loginVM);
         LoginInputBoundary loginInteractor =
                 new LoginInteractor(userGateway, loginPresenter);
         LoginController loginController =
                 new LoginController(loginInteractor, loginVM);
 
         // ---- Register (with email gateway) ----
-        RegisterOutputBoundary registerPresenter = new RegisterOutputBoundary() {
-            @Override
-            public void present(RegisterOutputData outputData) {
-                registerVM.setSuccess(outputData.isSuccess());
-                registerVM.setMessage(outputData.getMessage());
-            }
-        };
+        RegisterPresenter registerPresenter = new RegisterPresenter(registerVM);
         RegisterInputBoundary registerInteractor =
                 new RegisterInteractor(userGateway, registerPresenter, emailGateway);
         RegisterController registerController =
                 new RegisterController(registerInteractor, registerVM);
 
         // ---- Verify Email ----
-        VerifyEmailOutputBoundary verifyPresenter =
-                VerifyEmailController.createPresenter(verifyVM);
-
+        VerifyEmailPresenter verifyPresenter = new VerifyEmailPresenter(verifyVM);
         VerifyEmailInputBoundary verifyInteractor =
                 new VerifyEmailInteractor(userGateway, verifyPresenter);
-
         VerifyEmailController verifyController =
                 new VerifyEmailController(verifyInteractor, verifyVM);
 
-        // ---- Preferences ----
-        GetPreferencesOutputBoundary getPrefsPresenter = new GetPreferencesOutputBoundary() {
-            @Override
-            public void present(GetPreferencesOutputData outputData) {
-                if (outputData.getErrorMessage() != null) {
-                    preferencesVM.setErrorMessage(outputData.getErrorMessage());
-                    return;
-                }
-                preferencesVM.setRadiusKm(outputData.getRadiusKm());
-                preferencesVM.setSelectedCategories(outputData.getSelectedCategories());
-                preferencesVM.setFavorites(outputData.getFavorites());
-            }
-        };
-
-        UpdatePreferencesOutputBoundary updatePrefsPresenter = new UpdatePreferencesOutputBoundary() {
-            @Override
-            public void present(UpdatePreferencesOutputData outputData) {
-                if (outputData.isSuccess()) {
-                    preferencesVM.setMessage(outputData.getMessage());
-                    preferencesVM.setErrorMessage(null);
-                } else {
-                    preferencesVM.setErrorMessage(outputData.getMessage());
-                }
-            }
-        };
+        // ---- Preferences (Get + Update via single presenter) ----
+        PreferencesPresenter preferencesPresenter = new PreferencesPresenter(preferencesVM);
 
         GetPreferencesInputBoundary getPrefsInteractor =
-                new GetPreferencesInteractor(preferenceGateway, getPrefsPresenter);
+                new GetPreferencesInteractor(preferenceGateway, preferencesPresenter);
         UpdatePreferencesInputBoundary updatePrefsInteractor =
-                new UpdatePreferencesInteractor(preferenceGateway, updatePrefsPresenter);
+                new UpdatePreferencesInteractor(preferenceGateway, preferencesPresenter);
 
         PreferencesController preferencesController = new PreferencesController(
                 getPrefsInteractor,
