@@ -13,12 +13,12 @@ public class DashboardPresenter implements ListPlansOutputBoundary,
     private final DashboardViewModel dashboardViewModel;
     private final PlanDetailsViewModel planDetailsViewModel;
 
-public DashboardPresenter(DashboardViewModel dashboardViewModel, PlanDetailsViewModel planDetailsViewModel) {
-    this.dashboardViewModel = dashboardViewModel;
-    this.planDetailsViewModel = planDetailsViewModel;
-}
+    public DashboardPresenter(DashboardViewModel dashboardViewModel, PlanDetailsViewModel planDetailsViewModel) {
+        this.dashboardViewModel = dashboardViewModel;
+        this.planDetailsViewModel = planDetailsViewModel;
+    }
 
-@Override
+    @Override
     public void present(ListPlansOutputData outputData) {
         if (outputData.getErrorMessage() != null) {
             dashboardViewModel.setPlans(java.util.List.of());
@@ -29,7 +29,7 @@ public DashboardPresenter(DashboardViewModel dashboardViewModel, PlanDetailsView
         }
     }
 
-@Override
+    @Override
     public void present(DeletePlanOutputData outputData) {
         if (outputData.isSuccess()) {
             dashboardViewModel.setMessage(outputData.getMessage());
@@ -41,7 +41,7 @@ public DashboardPresenter(DashboardViewModel dashboardViewModel, PlanDetailsView
         }
     }
 
-@Override
+    @Override
     public void present(ApplyPreferencesFromPlanOutputData outputData) {
         if (outputData.isSuccess()) {
             dashboardViewModel.setMessage(outputData.getMessage());
@@ -51,7 +51,7 @@ public DashboardPresenter(DashboardViewModel dashboardViewModel, PlanDetailsView
         }
     }
 
-@Override
+    @Override
     public void present(GetPlanDetailsOutputData outputData) {
         if (outputData.getErrorMessage() != null) {
             planDetailsViewModel.setPlan(null);
