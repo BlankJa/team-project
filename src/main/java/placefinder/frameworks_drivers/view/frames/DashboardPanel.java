@@ -6,7 +6,10 @@ import placefinder.frameworks_drivers.view.components.swing.table.Table;
 import placefinder.frameworks_drivers.view.components.swing.table.TableCellAction;
 import placefinder.frameworks_drivers.view.components.swing.table.RowActionHandler;
 import placefinder.entities.Plan;
-import placefinder.interface_adapters.controllers.DashboardController;
+import placefinder.interface_adapters.controllers.ListPlansController;
+import placefinder.interface_adapters.controllers.DeletePlanController;
+import placefinder.interface_adapters.controllers.ApplyPreferencesFromPlanController;
+import placefinder.interface_adapters.controllers.GetPlanDetailsController;
 import placefinder.interface_adapters.viewmodels.DashboardViewModel;
 import placefinder.interface_adapters.viewmodels.PlanDetailsViewModel;
 
@@ -22,7 +25,11 @@ import java.util.List;
 public class DashboardPanel extends JPanel {
 
     private final AppFrame appFrame;
-    private final DashboardController dashboardController;
+    private final ListPlansController listPlansController;
+    private final DeletePlanController deletePlanController;
+    private final ApplyPreferencesFromPlanController applyPreferencesFromPlanController;
+    private final GetPlanDetailsController getPlanDetailsController;
+
     private final DashboardViewModel dashboardVM;
     private final PlanDetailsViewModel planDetailsVM;
 
@@ -31,27 +38,34 @@ public class DashboardPanel extends JPanel {
     private JLabel upcomingPlansValue;
     private JLabel lastPlanDateValue;
 
-    private Table planTable;                      // <-- use our custom Table
+    private Table planTable;
     private DefaultTableModel planTableModel;
     private final List<Plan> planRows = new ArrayList<>();
 
     private JLabel messageLabel;
 
     public DashboardPanel(AppFrame appFrame,
-                          DashboardController dashboardController,
+                          ListPlansController listPlansController,
+                          DeletePlanController deletePlanController,
+                          ApplyPreferencesFromPlanController applyPreferencesFromPlanController,
+                          GetPlanDetailsController getPlanDetailsController,
                           DashboardViewModel dashboardVM,
                           PlanDetailsViewModel planDetailsVM) {
+
         this.appFrame = appFrame;
-        this.dashboardController = dashboardController;
+        this.listPlansController = listPlansController;
+        this.deletePlanController = deletePlanController;
+        this.applyPreferencesFromPlanController = applyPreferencesFromPlanController;
+        this.getPlanDetailsController = getPlanDetailsController;
         this.dashboardVM = dashboardVM;
         this.planDetailsVM = planDetailsVM;
+
         initUI();
     }
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        // Gradient background to match Login/Register
         Graphics2D g2 = (Graphics2D) g;
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         Color c1 = new Color(7, 164, 121);
@@ -79,7 +93,6 @@ public class DashboardPanel extends JPanel {
         card.setBorder(new EmptyBorder(20, 20, 20, 20));
         add(card, gbc);
 
-        // ===== Header =====
         JPanel header = new JPanel(new BorderLayout(10, 5));
         header.setOpaque(false);
 
@@ -112,12 +125,10 @@ public class DashboardPanel extends JPanel {
 
         card.add(header, BorderLayout.NORTH);
 
-        // ===== Main content =====
         JPanel main = new JPanel(new BorderLayout(20, 20));
         main.setOpaque(false);
         card.add(main, BorderLayout.CENTER);
 
-        // Left: quick actions
         JPanel actionsPanel = new JPanel();
         actionsPanel.setOpaque(false);
         actionsPanel.setLayout(new BoxLayout(actionsPanel, BoxLayout.Y_AXIS));
@@ -154,13 +165,11 @@ public class DashboardPanel extends JPanel {
 
         main.add(actionsPanel, BorderLayout.WEST);
 
-        // Right side: stats + table
         JPanel rightPanel = new JPanel();
         rightPanel.setOpaque(false);
         rightPanel.setLayout(new BorderLayout(10, 10));
         main.add(rightPanel, BorderLayout.CENTER);
 
-        // Stats row
         JPanel statsRow = new JPanel(new GridLayout(1, 3, 10, 0));
         statsRow.setOpaque(false);
 
@@ -170,7 +179,6 @@ public class DashboardPanel extends JPanel {
 
         rightPanel.add(statsRow, BorderLayout.NORTH);
 
-        // Plans table
         PanelRound tableCard = new PanelRound();
         tableCard.setBackground(Color.WHITE);
         tableCard.setLayout(new BorderLayout(10, 10));
@@ -181,12 +189,10 @@ public class DashboardPanel extends JPanel {
         plansLabel.setForeground(new Color(50, 50, 50));
         tableCard.add(plansLabel, BorderLayout.NORTH);
 
-        // 4 columns: Name, Date, Location, Actions
         planTableModel = new DefaultTableModel(
                 new Object[]{"Name", "Date", "Location", "Actions"}, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                // Only actions column is editable (to allow button clicks)
                 return column == 3;
             }
         };
@@ -211,11 +217,9 @@ public class DashboardPanel extends JPanel {
         scroll.getViewport().setBackground(Color.WHITE);
         tableCard.add(scroll, BorderLayout.CENTER);
 
-        // Wire up action column with icons
         RowActionHandler handler = new RowActionHandler() {
             @Override
             public void onEdit(int row) {
-                // ensure selection matches clicked row
                 planTable.getSelectionModel().setSelectionInterval(row, row);
                 viewSelectedPlan();
             }
@@ -236,7 +240,6 @@ public class DashboardPanel extends JPanel {
 
         rightPanel.add(tableCard, BorderLayout.CENTER);
 
-        // Message label at bottom of card
         messageLabel = new JLabel(" ", SwingConstants.LEFT);
         messageLabel.setFont(new Font("sansserif", Font.PLAIN, 12));
         messageLabel.setForeground(new Color(90, 90, 90));
@@ -250,20 +253,6 @@ public class DashboardPanel extends JPanel {
         btn.setPreferredSize(new Dimension(180, 32));
         btn.setMaximumSize(new Dimension(180, 32));
         btn.setAlignmentX(Component.LEFT_ALIGNMENT);
-    }
-
-    private void styleSecondaryButton(Button btn) {
-        btn.setBackground(new Color(0, 92, 75));
-        btn.setForeground(Color.WHITE);
-        btn.setFont(new Font("sansserif", Font.BOLD, 12));
-        btn.setPreferredSize(new Dimension(180, 32));
-    }
-
-    private void styleDestructiveButton(Button btn) {
-        btn.setBackground(new Color(220, 72, 72));
-        btn.setForeground(Color.WHITE);
-        btn.setFont(new Font("sansserif", Font.BOLD, 12));
-        btn.setPreferredSize(new Dimension(140, 32));
     }
 
     private JLabel createStatCard(JPanel parentRow, String title) {
@@ -297,7 +286,7 @@ public class DashboardPanel extends JPanel {
                 : "Traveler";
         welcomeLabel.setText("Welcome, " + userName);
 
-        dashboardController.loadPlans(userId);
+        listPlansController.loadPlans(userId);
 
         planRows.clear();
         planTableModel.setRowCount(0);
@@ -307,7 +296,7 @@ public class DashboardPanel extends JPanel {
                     p.getName(),
                     p.getDate(),
                     p.getOriginAddress(),
-                    ""   // Actions column (icons only; value not used)
+                    ""
             });
         }
 
@@ -359,7 +348,7 @@ public class DashboardPanel extends JPanel {
                     JOptionPane.WARNING_MESSAGE);
             return;
         }
-        dashboardController.loadPlanDetails(selected.getId());
+        getPlanDetailsController.loadPlanDetails(selected.getId());
         if (planDetailsVM.getPlan() != null) {
             appFrame.showPlanDetails();
         } else {
@@ -385,7 +374,7 @@ public class DashboardPanel extends JPanel {
                 "Confirm Delete",
                 JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
-            dashboardController.deletePlan(userId, selected.getId());
+            deletePlanController.deletePlan(userId, selected.getId());
             refreshPlans();
         }
     }
@@ -400,7 +389,7 @@ public class DashboardPanel extends JPanel {
                     JOptionPane.WARNING_MESSAGE);
             return;
         }
-        dashboardController.applyPreferencesFromPlan(userId, selected.getId());
+        applyPreferencesFromPlanController.applyPreferencesFromPlan(userId, selected.getId());
         String msg = dashboardVM.getMessage() != null
                 ? dashboardVM.getMessage()
                 : "Preferences updated from plan.";

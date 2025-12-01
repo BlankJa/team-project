@@ -4,7 +4,8 @@ import placefinder.frameworks_drivers.view.components.swing.Button;
 import placefinder.frameworks_drivers.view.components.swing.PanelRound;
 import placefinder.entities.Plan;
 import placefinder.entities.PlanStop;
-import placefinder.interface_adapters.controllers.DashboardController;
+import placefinder.interface_adapters.controllers.DeletePlanController;
+import placefinder.interface_adapters.controllers.ApplyPreferencesFromPlanController;
 import placefinder.interface_adapters.viewmodels.DashboardViewModel;
 import placefinder.interface_adapters.viewmodels.PlanDetailsViewModel;
 
@@ -20,7 +21,8 @@ import java.util.Map;
 public class PlanDetailsPanel extends JPanel {
 
     private final AppFrame appFrame;
-    private final DashboardController dashboardController;
+    private final DeletePlanController deletePlanController;
+    private final ApplyPreferencesFromPlanController applyPreferencesFromPlanController;
     private final DashboardViewModel dashboardVM;
     private final PlanDetailsViewModel planDetailsVM;
 
@@ -32,12 +34,14 @@ public class PlanDetailsPanel extends JPanel {
 
     private Plan currentPlan;
 
-    public PlanDetailsPanel(DashboardController dashboardController,
+    public PlanDetailsPanel(DeletePlanController deletePlanController,
+                            ApplyPreferencesFromPlanController applyPreferencesFromPlanController,
                             DashboardViewModel dashboardVM,
                             PlanDetailsViewModel planDetailsVM,
                             AppFrame appFrame) {
         this.appFrame = appFrame;
-        this.dashboardController = dashboardController;
+        this.deletePlanController = deletePlanController;
+        this.applyPreferencesFromPlanController = applyPreferencesFromPlanController;
         this.dashboardVM = dashboardVM;
         this.planDetailsVM = planDetailsVM;
         initUI();
@@ -46,7 +50,6 @@ public class PlanDetailsPanel extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        // Gradient background
         Graphics2D g2 = (Graphics2D) g;
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         Color c1 = new Color(7, 164, 121);
@@ -74,7 +77,6 @@ public class PlanDetailsPanel extends JPanel {
         card.setBorder(new EmptyBorder(20, 20, 20, 20));
         add(card, gbc);
 
-        // Header
         JPanel header = new JPanel(new BorderLayout());
         header.setOpaque(false);
 
@@ -110,12 +112,10 @@ public class PlanDetailsPanel extends JPanel {
 
         card.add(header, BorderLayout.NORTH);
 
-        // Center content
         JPanel center = new JPanel(new BorderLayout(15, 15));
         center.setOpaque(false);
         card.add(center, BorderLayout.CENTER);
 
-        // Top info panel
         PanelRound infoCard = new PanelRound();
         infoCard.setBackground(Color.WHITE);
         infoCard.setLayout(new GridBagLayout());
@@ -151,7 +151,6 @@ public class PlanDetailsPanel extends JPanel {
 
         center.add(infoCard, BorderLayout.NORTH);
 
-        // Timeline area
         PanelRound timelineCard = new PanelRound();
         timelineCard.setBackground(Color.WHITE);
         timelineCard.setLayout(new BorderLayout());
@@ -171,7 +170,6 @@ public class PlanDetailsPanel extends JPanel {
 
         center.add(timelineCard, BorderLayout.CENTER);
 
-        // Bottom buttons
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         bottom.setOpaque(false);
 
@@ -283,7 +281,7 @@ public class PlanDetailsPanel extends JPanel {
         if (confirm != JOptionPane.YES_OPTION) {
             return;
         }
-        dashboardController.deletePlan(userId, currentPlan.getId());
+        deletePlanController.deletePlan(userId, currentPlan.getId());
         appFrame.showDashboard();
     }
 
@@ -297,7 +295,7 @@ public class PlanDetailsPanel extends JPanel {
         }
         Integer userId = appFrame.getCurrentUserId();
         if (userId == null) return;
-        dashboardController.applyPreferencesFromPlan(userId, currentPlan.getId());
+        applyPreferencesFromPlanController.applyPreferencesFromPlan(userId, currentPlan.getId());
         String msg = dashboardVM.getMessage() != null
                 ? dashboardVM.getMessage()
                 : "Preferences updated from this plan.";

@@ -167,29 +167,44 @@ public class TravelSchedulerApp {
         );
 
         // ---- Plans Dashboard / Details / Delete / Apply Prefs ----
-        DashboardPresenter dashboardPresenter = new DashboardPresenter(dashboardVM, planDetailsVM);
+        ListPlansPresenter listPlansPresenter = new ListPlansPresenter(dashboardVM);
+        DeletePlanPresenter deletePlanPresenter = new DeletePlanPresenter(dashboardVM);
+        ApplyPreferencesFromPlanPresenter applyPreferencesFromPlanPresenter =
+                new ApplyPreferencesFromPlanPresenter(dashboardVM);
+        GetPlanDetailsPresenter getPlanDetailsPresenter =
+                new GetPlanDetailsPresenter(planDetailsVM);
 
         ListPlansInputBoundary listPlansInteractor =
-                new ListPlansInteractor(planDataAccessInterface, dashboardPresenter);
+                new ListPlansInteractor(planGateway, listPlansPresenter);
         DeletePlanInputBoundary deletePlanInteractor =
-                new DeletePlanInteractor(planDataAccessInterface, dashboardPresenter);
+                new DeletePlanInteractor(planGateway, deletePlanPresenter);
         ApplyPreferencesFromPlanInputBoundary applyPrefsFromPlanInteractor =
                 new ApplyPreferencesFromPlanInteractor(
-                        planDataAccessInterface,
-                        preferenceDataAccessInterface,
-                        dashboardPresenter
+                        planGateway,
+                        preferenceGateway,
+                        applyPreferencesFromPlanPresenter
                 );
         GetPlanDetailsInputBoundary getPlanDetailsInteractor =
-                new GetPlanDetailsInteractor(planDataAccessInterface, dashboardPresenter);
+                new GetPlanDetailsInteractor(planGateway, getPlanDetailsPresenter);
 
-        DashboardController dashboardController = new DashboardController(
+        ListPlansController listPlansController = new ListPlansController(
                 listPlansInteractor,
-                deletePlanInteractor,
-                applyPrefsFromPlanInteractor,
-                getPlanDetailsInteractor,
-                dashboardVM,
-                planDetailsVM
+                dashboardVM
         );
+        DeletePlanController deletePlanController = new DeletePlanController(
+                deletePlanInteractor,
+                dashboardVM
+        );
+        ApplyPreferencesFromPlanController applyPreferencesFromPlanController =
+                new ApplyPreferencesFromPlanController(
+                        applyPrefsFromPlanInteractor,
+                        dashboardVM
+                );
+        GetPlanDetailsController getPlanDetailsController =
+                new GetPlanDetailsController(
+                        getPlanDetailsInteractor,
+                        planDetailsVM
+                );
 
         // ---- Weather Advice ----
         WeatherAdvicePresenter weatherAdvicePresenter = new WeatherAdvicePresenter(weatherAdviceVM);
@@ -209,7 +224,10 @@ public class TravelSchedulerApp {
                     verifyController,
                     preferencesController,
                     planCreationController,
-                    dashboardController,
+                    listPlansController,
+                    deletePlanController,
+                    applyPreferencesFromPlanController,
+                    getPlanDetailsController,
                     weatherAdviceController,
                     loginVM,
                     registerVM,
