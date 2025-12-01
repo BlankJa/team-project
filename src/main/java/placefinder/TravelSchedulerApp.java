@@ -2,10 +2,6 @@ package placefinder;
 
 import javax.swing.SwingUtilities;
 
-// NOTE: JavaFX is still used in your UI layer (e.g., SplashScreen via JFXPanel).
-// We deliberately do NOT call Platform.startup(...) here to avoid thread issues.
-// JavaFX should be initialized inside components using JFXPanel + Platform.runLater
-// on the JavaFX Application Thread.
 
 import placefinder.frameworks_drivers.database.Database;
 import placefinder.frameworks_drivers.dataaccess.SqliteUserDataAccess;
@@ -175,17 +171,17 @@ public class TravelSchedulerApp {
                 new GetPlanDetailsPresenter(planDetailsVM);
 
         ListPlansInputBoundary listPlansInteractor =
-                new ListPlansInteractor(planGateway, listPlansPresenter);
+                new ListPlansInteractor(planDataAccessInterface, listPlansPresenter);
         DeletePlanInputBoundary deletePlanInteractor =
-                new DeletePlanInteractor(planGateway, deletePlanPresenter);
+                new DeletePlanInteractor(planDataAccessInterface, deletePlanPresenter);
         ApplyPreferencesFromPlanInputBoundary applyPrefsFromPlanInteractor =
                 new ApplyPreferencesFromPlanInteractor(
-                        planGateway,
-                        preferenceGateway,
+                        planDataAccessInterface,
+                        preferenceDataAccessInterface,
                         applyPreferencesFromPlanPresenter
                 );
         GetPlanDetailsInputBoundary getPlanDetailsInteractor =
-                new GetPlanDetailsInteractor(planGateway, getPlanDetailsPresenter);
+                new GetPlanDetailsInteractor(planDataAccessInterface, getPlanDetailsPresenter);
 
         ListPlansController listPlansController = new ListPlansController(
                 listPlansInteractor,
