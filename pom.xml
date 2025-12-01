@@ -62,6 +62,23 @@
             <artifactId>mail</artifactId>
             <version>1.4.7</version>
         </dependency>
+
+        <!-- JavaFX for video playback -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>17.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-media</artifactId>
+            <version>17.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-swing</artifactId>
+            <version>17.0.2</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -82,7 +99,13 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.1.0</version>
                 <configuration>
-                    <mainClass>placefinder.frameworks_drivers.Main</mainClass>
+                    <mainClass>placefinder.TravelSchedulerApp</mainClass>
+                    <options>
+                        <option>--add-modules</option>
+                        <option>javafx.controls,javafx.media,javafx.swing</option>
+                        <option>--add-exports</option>
+                        <option>javafx.base/com.sun.javafx.runtime=ALL-UNNAMED</option>
+                    </options>
                 </configuration>
             </plugin>
         </plugins>

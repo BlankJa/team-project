@@ -21,6 +21,7 @@ public class PlanCreationViewModel {
 
     private String infoMessage;
     private String errorMessage;
+    private boolean isLoading = false;
 
     public List<Place> getRecommendedPlaces() {
         return Collections.unmodifiableList(recommendedPlaces);
@@ -93,4 +94,7 @@ public class PlanCreationViewModel {
     public void setWeatherAdvice(String weatherAdvice) {
         this.weatherAdvice = weatherAdvice;
     }
+
+    public boolean isLoading() { return isLoading; }
+    public void setLoading(boolean loading) { this.isLoading = loading; }
 }

@@ -1,6 +1,7 @@
 package placefinder;
 
 import javax.swing.SwingUtilities;
+import javafx.application.Platform;
 
 import placefinder.frameworks_drivers.database.Database;
 import placefinder.frameworks_drivers.database.SqliteUserGatewayImpl;
@@ -51,10 +52,21 @@ import placefinder.interface_adapters.presenters.*;
 
 // UI
 import placefinder.frameworks_drivers.view.frames.AppFrame;
+import placefinder.frameworks_drivers.view.frames.SplashScreen;
 
 public class TravelSchedulerApp {
 
     public static void main(String[] args) {
+        // Initialize JavaFX platform (for video playback)
+        // Check if JavaFX is already started
+        if (!Platform.isFxApplicationThread()) {
+            try {
+                Platform.startup(() -> {});
+            } catch (IllegalStateException e) {
+                // JavaFX may already be started, ignore this exception
+                System.out.println("JavaFX platform already started");
+            }
+        }
 
         // Ensure database is initialized (triggers static init)
         try {
@@ -190,6 +202,10 @@ public class TravelSchedulerApp {
 
         // ========== START UI ==========
         SwingUtilities.invokeLater(() -> {
+            // Create and show splash screen
+            SplashScreen splash = new SplashScreen();
+            
+            // Initialize main window in background
             AppFrame frame = new AppFrame(
                     loginController,
                     registerController,
@@ -207,7 +223,11 @@ public class TravelSchedulerApp {
                     planDetailsVM,
                     weatherAdviceVM
             );
-            frame.setVisible(true);
+            
+            // Show splash screen, then show main window after it closes
+            splash.showSplash(() -> {
+                frame.setVisible(true);
+            });
         });
     }
 }

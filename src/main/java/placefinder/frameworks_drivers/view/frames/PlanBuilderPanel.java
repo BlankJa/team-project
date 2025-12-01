@@ -3,6 +3,7 @@ package placefinder.frameworks_drivers.view.frames;
 import placefinder.frameworks_drivers.view.components.swing.Button;
 import placefinder.frameworks_drivers.view.components.swing.MyTextFieldSecondary;
 import placefinder.frameworks_drivers.view.components.swing.PanelRound;
+import placefinder.frameworks_drivers.view.components.swing.LoadingOverlay;
 import placefinder.entities.Plan;
 import placefinder.entities.PlanStop;
 import placefinder.entities.Place;
@@ -44,6 +45,7 @@ public class PlanBuilderPanel extends JPanel {
     private JLabel errorLabel;
 
     private Integer editingPlanId = null;
+    private LoadingOverlay loadingOverlay;
 
     public PlanBuilderPanel(AppFrame appFrame,
                             PlanCreationController planCreationController,
@@ -409,67 +411,88 @@ public class PlanBuilderPanel extends JPanel {
             return;
         }
 
-        // 1) Get places
-        planCreationController.searchPlaces(userId, loc, date);
-        recommendedModel.clear();
-        for (Place p : planCreationVM.getRecommendedPlaces()) {
-            recommendedModel.addElement(p);
-        }
+        // Set loading state and show loading animation
+        planCreationVM.setLoading(true);
+        showLoadingOverlay("Searching places and weather information...");
 
-        if (planCreationVM.getErrorMessage() != null) {
-            errorLabel.setText(planCreationVM.getErrorMessage());
-        } else {
-            errorLabel.setText(" ");
-        }
-
-        // 2) Get weather advice using the working WeatherAdvice use case
-        weatherAdviceController.getAdvice(loc, date);
-
-        String adviceText;
-        if (weatherAdviceVM.getErrorMessage() != null) {
-            adviceText = "Unable to retrieve weather advice: " + weatherAdviceVM.getErrorMessage();
-        } else {
-            String summary = weatherAdviceVM.getSummary();
-            String advice = weatherAdviceVM.getAdvice();
-            StringBuilder sb = new StringBuilder();
-            if (summary != null && !summary.isBlank()) {
-                sb.append(summary.trim()).append(" ");
+        // Execute search operation in background thread
+        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                // 1) Get places
+                planCreationController.searchPlaces(userId, loc, date);
+                
+                // 2) Get weather advice using the working WeatherAdvice use case
+                weatherAdviceController.getAdvice(loc, date);
+                return null;
             }
-            if (advice != null && !advice.isBlank()) {
-                sb.append(advice.trim());
+
+            @Override
+            protected void done() {
+                // Set loading state and hide loading animation
+                planCreationVM.setLoading(false);
+                hideLoadingOverlay();
+
+                // Update UI
+                recommendedModel.clear();
+                for (Place p : planCreationVM.getRecommendedPlaces()) {
+                    recommendedModel.addElement(p);
+                }
+
+                if (planCreationVM.getErrorMessage() != null) {
+                    errorLabel.setText(planCreationVM.getErrorMessage());
+                } else {
+                    errorLabel.setText(" ");
+                }
+
+                String adviceText;
+                if (weatherAdviceVM.getErrorMessage() != null) {
+                    adviceText = "Unable to retrieve weather advice: " + weatherAdviceVM.getErrorMessage();
+                } else {
+                    String summary = weatherAdviceVM.getSummary();
+                    String advice = weatherAdviceVM.getAdvice();
+                    StringBuilder sb = new StringBuilder();
+                    if (summary != null && !summary.isBlank()) {
+                        sb.append(summary.trim()).append(" ");
+                    }
+                    if (advice != null && !advice.isBlank()) {
+                        sb.append(advice.trim());
+                    }
+                    adviceText = sb.toString().trim();
+                }
+
+                // 3) Optionally append indoor/outdoor bias based on recommended places
+                int indoor = 0;
+                int outdoor = 0;
+                for (int i = 0; i < recommendedModel.size(); i++) {
+                    Place p = recommendedModel.getElementAt(i);
+                    if (p.getIndoorOutdoorType() == null) continue;
+                    switch (p.getIndoorOutdoorType()) {
+                        case INDOOR -> indoor++;
+                        case OUTDOOR -> outdoor++;
+                        default -> { /* MIXED or unknown */ }
+                    }
+                }
+
+                if (indoor > outdoor) {
+                    adviceText += (adviceText.isEmpty() ? "" : " ")
+                            + "We are favouring indoor locations based on the forecast.";
+                } else if (outdoor > indoor) {
+                    adviceText += (adviceText.isEmpty() ? "" : " ")
+                            + "We are favouring outdoor locations based on the forecast.";
+                } else if (indoor + outdoor > 0) {
+                    adviceText += (adviceText.isEmpty() ? "" : " ")
+                            + "You have a mix of indoor and outdoor locations.";
+                }
+
+                if (adviceText == null || adviceText.isBlank()) {
+                    weatherAdviceArea.setText("");
+                } else {
+                    weatherAdviceArea.setText(adviceText);
+                }
             }
-            adviceText = sb.toString().trim();
-        }
-
-        // 3) Optionally append indoor/outdoor bias based on recommended places
-        int indoor = 0;
-        int outdoor = 0;
-        for (int i = 0; i < recommendedModel.size(); i++) {
-            Place p = recommendedModel.getElementAt(i);
-            if (p.getIndoorOutdoorType() == null) continue;
-            switch (p.getIndoorOutdoorType()) {
-                case INDOOR -> indoor++;
-                case OUTDOOR -> outdoor++;
-                default -> { /* MIXED or unknown */ }
-            }
-        }
-
-        if (indoor > outdoor) {
-            adviceText += (adviceText.isEmpty() ? "" : " ")
-                    + "We are favouring indoor locations based on the forecast.";
-        } else if (outdoor > indoor) {
-            adviceText += (adviceText.isEmpty() ? "" : " ")
-                    + "We are favouring outdoor locations based on the forecast.";
-        } else if (indoor + outdoor > 0) {
-            adviceText += (adviceText.isEmpty() ? "" : " ")
-                    + "You have a mix of indoor and outdoor locations.";
-        }
-
-        if (adviceText == null || adviceText.isBlank()) {
-            weatherAdviceArea.setText("");
-        } else {
-            weatherAdviceArea.setText(adviceText);
-        }
+        };
+        worker.execute();
     }
 
     private void addSelectedPlaces() {
@@ -534,26 +557,45 @@ public class PlanBuilderPanel extends JPanel {
             return;
         }
 
-        planCreationController.buildPlan(userId, loc, date, startTime, selectedPlaces, editingPlanId);
+        // Set loading state and show loading animation
+        planCreationVM.setLoading(true);
+        showLoadingOverlay("Generating plan...");
 
-        if (planCreationVM.getErrorMessage() != null) {
-            errorLabel.setText(planCreationVM.getErrorMessage());
-            planPreviewArea.setText("");
-            return;
-        }
+        // Execute plan generation operation in background thread
+        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                planCreationController.buildPlan(userId, loc, date, startTime, selectedPlaces, editingPlanId);
+                return null;
+            }
 
-        errorLabel.setText(" ");
-        Plan plan = planCreationVM.getPlanPreview();
-        if (plan != null) {
-            planPreviewArea.setText(buildPlanPreviewText(plan));
-            String msg = planCreationVM.getInfoMessage() != null
-                    ? planCreationVM.getInfoMessage()
-                    : "Plan generated.";
-            infoLabel.setText(msg);
-        } else {
-            planPreviewArea.setText("");
-            infoLabel.setText(" ");
-        }
+            @Override
+            protected void done() {
+                // Set loading state and hide loading animation
+                planCreationVM.setLoading(false);
+                hideLoadingOverlay();
+
+                // Process results
+                if (planCreationVM.getErrorMessage() != null) {
+                    errorLabel.setText(planCreationVM.getErrorMessage());
+                    planPreviewArea.setText("");
+                } else {
+                    errorLabel.setText(" ");
+                    Plan plan = planCreationVM.getPlanPreview();
+                    if (plan != null) {
+                        planPreviewArea.setText(buildPlanPreviewText(plan));
+                        String msg = planCreationVM.getInfoMessage() != null
+                                ? planCreationVM.getInfoMessage()
+                                : "Plan generated.";
+                        infoLabel.setText(msg);
+                    } else {
+                        planPreviewArea.setText("");
+                        infoLabel.setText(" ");
+                    }
+                }
+            }
+        };
+        worker.execute();
     }
 
     private void savePlan() {
@@ -596,5 +638,24 @@ public class PlanBuilderPanel extends JPanel {
             }
         }
         return sb.toString();
+    }
+
+    private void showLoadingOverlay(String message) {
+        SwingUtilities.invokeLater(() -> {
+            if (loadingOverlay == null) {
+                loadingOverlay = new LoadingOverlay(message);
+            } else {
+                loadingOverlay.setMessage(message);
+            }
+            loadingOverlay.showOverlay(this);
+        });
+    }
+
+    private void hideLoadingOverlay() {
+        SwingUtilities.invokeLater(() -> {
+            if (loadingOverlay != null) {
+                loadingOverlay.hideOverlay(this);
+            }
+        });
     }
 }

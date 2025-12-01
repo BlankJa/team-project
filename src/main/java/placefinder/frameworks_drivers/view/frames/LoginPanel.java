@@ -4,6 +4,7 @@ import placefinder.frameworks_drivers.view.components.swing.Button;
 import placefinder.frameworks_drivers.view.components.swing.MyPasswordField;
 import placefinder.frameworks_drivers.view.components.swing.MyTextField;
 import placefinder.frameworks_drivers.view.components.swing.PanelRound;
+import placefinder.frameworks_drivers.view.components.swing.LoadingOverlay;
 import placefinder.interface_adapters.controllers.LoginController;
 import placefinder.interface_adapters.viewmodels.LoginViewModel;
 
@@ -24,6 +25,7 @@ public class LoginPanel extends JPanel {
     private MyTextField emailField;
     private MyPasswordField passwordField;
     private JLabel errorLabel;
+    private LoadingOverlay loadingOverlay;
 
     public LoginPanel(AppFrame appFrame,
                       LoginController loginController,
@@ -134,14 +136,53 @@ public class LoginPanel extends JPanel {
         String email = emailField.getText().trim();
         String password = new String(passwordField.getPassword());
 
-        loginController.login(email, password);
+        // Set loading state and show loading animation
+        loginVM.setLoading(true);
+        showLoadingOverlay("Logging in...");
 
-        if (loginVM.getLoggedInUser() != null) {
-            errorLabel.setText(" ");
-            appFrame.onLoginSuccess();
-        } else {
-            String msg = loginVM.getErrorMessage();
-            errorLabel.setText(msg != null ? msg : "Login failed.");
-        }
+        // Execute login operation in background thread
+        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                loginController.login(email, password);
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                // Set loading state and hide loading animation
+                loginVM.setLoading(false);
+                hideLoadingOverlay();
+
+                // Process login result
+                if (loginVM.getLoggedInUser() != null) {
+                    errorLabel.setText(" ");
+                    appFrame.onLoginSuccess();
+                } else {
+                    String msg = loginVM.getErrorMessage();
+                    errorLabel.setText(msg != null ? msg : "Login failed.");
+                }
+            }
+        };
+        worker.execute();
+    }
+
+    private void showLoadingOverlay(String message) {
+        SwingUtilities.invokeLater(() -> {
+            if (loadingOverlay == null) {
+                loadingOverlay = new LoadingOverlay(message);
+            } else {
+                loadingOverlay.setMessage(message);
+            }
+            loadingOverlay.showOverlay(this);
+        });
+    }
+
+    private void hideLoadingOverlay() {
+        SwingUtilities.invokeLater(() -> {
+            if (loadingOverlay != null) {
+                loadingOverlay.hideOverlay(this);
+            }
+        });
     }
 }

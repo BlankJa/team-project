@@ -4,6 +4,7 @@ public class WeatherAdviceViewModel {
     private String summary;
     private String advice;
     private String errorMessage;
+    private boolean isLoading = false;
 
     public String getSummary() { return summary; }
     public void setSummary(String summary) { this.summary = summary; }
@@ -13,4 +14,7 @@ public class WeatherAdviceViewModel {
 
     public String getErrorMessage() { return errorMessage; }
     public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
+
+    public boolean isLoading() { return isLoading; }
+    public void setLoading(boolean loading) { this.isLoading = loading; }
 }
