@@ -34,7 +34,7 @@ Core Features:
 
 - Save generated plans to user account
 
-- View, list, and delete previous plans
+- View, list, and delete plans
 
 - Route ordering + navigation logic for efficient travel
 
