@@ -7,21 +7,24 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * Main application frame for PlaceFinder / TravelScheduler.
- * - Manages the card layout for Login, Register, and Preferences screens.
- * - Handles session management and navigation between screens.
- * - Supports email verification (used inside RegisterPanel) and preferences.
+ * Main UI frame of PlaceFinder / TravelScheduler.
+ *
+ * Responsibilities:
+ * - Holds and switches between UI screens using CardLayout.
+ * - Receives controllers + view models from main application (TravelSchedulerApp).
+ * - Controls navigation (Login → Register → Preferences → Create Plan → Plan Details).
+ * - Stores active session state (current user).
  */
 public class AppFrame extends JFrame {
 
-    // ===== Controllers =====
+    // ==== Controllers ====
     private final LoginController loginController;
     private final RegisterController registerController;
     private final VerifyEmailController verifyEmailController;
     private final PreferencesController preferencesController;
     private final PlanCreationController planCreationController;
 
-    // ===== ViewModels =====
+    // ==== ViewModels ====
     private final LoginViewModel loginVM;
     private final RegisterViewModel registerVM;
     private final VerifyEmailViewModel verifyVM;
@@ -29,28 +32,32 @@ public class AppFrame extends JFrame {
     private final PlanCreationViewModel planCreationVM;
     private final PlanDetailsViewModel planDetailsVM;
 
-    // ===== Session state =====
+    // ==== Session state ====
     private Integer currentUserId = null;
     private String currentUserName = null;
 
-    // ===== Layout =====
+    // ==== Layout ====
     private CardLayout cardLayout;
     private JPanel mainPanel;
 
-    // Screen names
+    // ==== Screen names ====
     public static final String CARD_LOGIN = "login";
     public static final String CARD_REGISTER = "register";
     public static final String CARD_PREFERENCES = "preferences";
-    public static final String CARD_PLAN = "plan";
+    public static final String CARD_PLAN_CREATE = "planCreate";
     public static final String CARD_PLAN_DETAILS = "planDetails";
 
-    // Panels
+    // ==== Panels ====
     private LoginPanel loginPanel;
     private RegisterPanel registerPanel;
     private PreferencesPanel preferencesPanel;
     private PlanBuilderPanel planBuilderPanel;
     private PlanDetailsPanel planDetailsPanel;
 
+    /**
+     * Full constructor — receives all dependencies from TravelSchedulerApp.
+     * This keeps the UI framework-independent from business logic layers.
+     */
     public AppFrame(
             LoginController loginController,
             RegisterController registerController,
@@ -90,65 +97,49 @@ public class AppFrame extends JFrame {
         cardLayout = new CardLayout();
         mainPanel = new JPanel(cardLayout);
 
-        // Login panel (same as before)
+        // Create screens with injected controllers + ViewModels
         loginPanel = new LoginPanel(this, loginController, loginVM);
 
-        // Register panel – NOTE: uses verifyEmailController + verifyVM
         registerPanel = new RegisterPanel(
-                this,
-                registerController,
-                registerVM,
-                verifyEmailController,
-                verifyVM
+                this, registerController, registerVM, verifyEmailController, verifyVM
         );
 
-        // Preferences panel – uses preferencesController + preferencesVM
         preferencesPanel = new PreferencesPanel(
-                this,
-                preferencesController,
-                preferencesVM
+                this, preferencesController, preferencesVM
         );
 
-        // Plan Builder panel – uses planCreationController + planCreationVM
         planBuilderPanel = new PlanBuilderPanel(
-                this,
-                planCreationController,
-                planCreationVM
+                this, planCreationController, planCreationVM
         );
 
+        planDetailsPanel = new PlanDetailsPanel(
+                this, planDetailsVM
+        );
+
+        // Add screens into CardLayout container
         mainPanel.add(loginPanel, CARD_LOGIN);
         mainPanel.add(registerPanel, CARD_REGISTER);
         mainPanel.add(preferencesPanel, CARD_PREFERENCES);
-        mainPanel.add(planBuilderPanel, CARD_PLAN);
+        mainPanel.add(planBuilderPanel, CARD_PLAN_CREATE);
         mainPanel.add(planDetailsPanel, CARD_PLAN_DETAILS);
 
         setContentPane(mainPanel);
         showLogin();
     }
 
-    void showCard(String card) {
-        cardLayout.show(mainPanel, card);
-    }
+    // ===== Navigation =====
 
-    // ===== Navigation helpers =====
-
-    public void showLogin() {
-        showCard(CARD_LOGIN);
-    }
-
-    public void showRegister() {
-        showCard(CARD_REGISTER);
-    }
+    public void showLogin() { showCard(CARD_LOGIN); }
+    public void showRegister() { showCard(CARD_REGISTER); }
 
     public void showPreferences() {
-        // Let the preferences screen refresh based on the current user
-        preferencesPanel.loadForCurrentUser();
+        preferencesPanel.loadForCurrentUser(); // refresh preferences before showing
         showCard(CARD_PREFERENCES);
     }
 
-    public void showNewPlan() {
+    public void showPlanCreation() {
         planBuilderPanel.setupForNewPlan();
-        showCard(CARD_PLAN);
+        showCard(CARD_PLAN_CREATE);
     }
 
     public void showPlanDetails() {
@@ -156,13 +147,16 @@ public class AppFrame extends JFrame {
         showCard(CARD_PLAN_DETAILS);
     }
 
-    // ===== Session management =====
+    private void showCard(String name) {
+        cardLayout.show(mainPanel, name);
+    }
+
+    // ===== Session Management =====
 
     public void onLoginSuccess() {
         if (loginVM.getLoggedInUser() != null) {
             currentUserId = loginVM.getLoggedInUser().getId();
             currentUserName = loginVM.getLoggedInUser().getName();
-            // After a successful login, go straight to preferences screen
             showPreferences();
         }
     }
@@ -171,15 +165,9 @@ public class AppFrame extends JFrame {
         currentUserId = null;
         currentUserName = null;
         loginVM.setLoggedInUser(null);
-        loginVM.setErrorMessage(null);
         showLogin();
     }
 
-    public Integer getCurrentUserId() {
-        return currentUserId;
-    }
-
-    public String getCurrentUserName() {
-        return currentUserName;
-    }
+    public Integer getCurrentUserId() { return currentUserId; }
+    public String getCurrentUserName() { return currentUserName; }
 }
