@@ -3,6 +3,7 @@ package placefinder.frameworks_drivers.view.frames;
 import placefinder.frameworks_drivers.view.components.swing.Button;
 import placefinder.frameworks_drivers.view.components.swing.MyTextField;
 import placefinder.frameworks_drivers.view.components.swing.PanelRound;
+import placefinder.frameworks_drivers.view.components.swing.LoadingOverlay;
 import placefinder.interface_adapters.controllers.WeatherAdviceController;
 import placefinder.interface_adapters.viewmodels.WeatherAdviceViewModel;
 
@@ -23,6 +24,7 @@ public class WeatherAdvicePanel extends JPanel {
     private JTextArea summaryArea;
     private JTextArea adviceArea;
     private JLabel errorLabel;
+    private LoadingOverlay loadingOverlay;
 
     public WeatherAdvicePanel(AppFrame appFrame,
                               WeatherAdviceController weatherAdviceController,
@@ -274,17 +276,57 @@ public class WeatherAdvicePanel extends JPanel {
                     JOptionPane.WARNING_MESSAGE);
             return;
         }
-        weatherAdviceController.getAdvice(location, date.isEmpty() ? null : date);
 
-        if (weatherAdviceVM.getErrorMessage() != null) {
-            errorLabel.setText(weatherAdviceVM.getErrorMessage());
-            summaryArea.setText("");
-            adviceArea.setText("");
-        } else {
-            errorLabel.setText(" ");
-            summaryArea.setText(weatherAdviceVM.getSummary() != null ? weatherAdviceVM.getSummary() : "");
-            adviceArea.setText(weatherAdviceVM.getAdvice() != null ? weatherAdviceVM.getAdvice() : "");
-        }
+        // Set loading state and show loading animation
+        weatherAdviceVM.setLoading(true);
+        showLoadingOverlay("Fetching weather information...");
+
+        // Execute weather advice retrieval operation in background thread
+        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                weatherAdviceController.getAdvice(location, date.isEmpty() ? null : date);
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                // Set loading state and hide loading animation
+                weatherAdviceVM.setLoading(false);
+                hideLoadingOverlay();
+
+                // Process results
+                if (weatherAdviceVM.getErrorMessage() != null) {
+                    errorLabel.setText(weatherAdviceVM.getErrorMessage());
+                    summaryArea.setText("");
+                    adviceArea.setText("");
+                } else {
+                    errorLabel.setText(" ");
+                    summaryArea.setText(weatherAdviceVM.getSummary() != null ? weatherAdviceVM.getSummary() : "");
+                    adviceArea.setText(weatherAdviceVM.getAdvice() != null ? weatherAdviceVM.getAdvice() : "");
+                }
+            }
+        };
+        worker.execute();
+    }
+
+    private void showLoadingOverlay(String message) {
+        SwingUtilities.invokeLater(() -> {
+            if (loadingOverlay == null) {
+                loadingOverlay = new LoadingOverlay(message);
+            } else {
+                loadingOverlay.setMessage(message);
+            }
+            loadingOverlay.showOverlay(this);
+        });
+    }
+
+    private void hideLoadingOverlay() {
+        SwingUtilities.invokeLater(() -> {
+            if (loadingOverlay != null) {
+                loadingOverlay.hideOverlay(this);
+            }
+        });
     }
 
     private static class FixedImagePanel extends JPanel {
