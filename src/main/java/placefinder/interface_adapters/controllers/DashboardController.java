@@ -2,6 +2,9 @@ package placefinder.interface_adapters.controllers;
 
 import placefinder.interface_adapters.viewmodels.DashboardViewModel;
 import placefinder.interface_adapters.viewmodels.PlanDetailsViewModel;
+import placefinder.usecases.deleteplan.*;
+import placefinder.usecases.listplans.*;
+import placefinder.usecases.getplandetails.*;
 import placefinder.usecases.plans.*;
 
 public class DashboardController implements
@@ -40,7 +43,7 @@ public class DashboardController implements
 
     public void deletePlan(int userId, int planId) {
         dashboardViewModel.setErrorMessage(null);
-        deletePlanInteractor.execute(new DeletePlanInputData(planId, userId));
+        deletePlanInteractor.execute(new DeletePlanInputBoundary(planId, userId));
     }
 
     public void applyPreferencesFromPlan(int userId, int planId) {
