@@ -1,4 +1,4 @@
-package placefinder.usecases.preferences;
+package placefinder.usecases.favouritelocation;
 
 public class DeleteFavoriteOutputData {
     private final boolean success;

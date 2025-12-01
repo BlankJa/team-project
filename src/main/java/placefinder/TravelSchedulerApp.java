@@ -17,6 +17,10 @@ import placefinder.frameworks_drivers.api.OpenCageGeocodingGateway;
 import placefinder.frameworks_drivers.api.GeoApifyPlacesGatewayImpl;
 import placefinder.frameworks_drivers.api.OpenMeteoWeatherGatewayImpl;
 
+import placefinder.usecases.favouritelocation.AddFavoriteInputBoundary;
+import placefinder.usecases.favouritelocation.AddFavoriteInteractor;
+import placefinder.usecases.favouritelocation.DeleteFavoriteInputBoundary;
+import placefinder.usecases.favouritelocation.DeleteFavoriteInteractor;
 import placefinder.usecases.ports.UserGateway;
 import placefinder.usecases.ports.PreferenceGateway;
 import placefinder.usecases.ports.PlanGateway;

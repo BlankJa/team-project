@@ -1,4 +1,4 @@
-package placefinder.usecases.preferences;
+package placefinder.usecases.favouritelocation;
 
 import placefinder.entities.FavoriteLocation;
 import placefinder.entities.GeocodeResult;

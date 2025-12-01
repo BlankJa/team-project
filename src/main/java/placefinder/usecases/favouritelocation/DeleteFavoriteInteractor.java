@@ -1,4 +1,4 @@
-package placefinder.usecases.preferences;
+package placefinder.usecases.favouritelocation;
 
 import placefinder.usecases.ports.PreferenceGateway;
 

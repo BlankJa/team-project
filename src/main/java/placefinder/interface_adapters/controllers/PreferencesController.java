@@ -1,7 +1,10 @@
 package placefinder.interface_adapters.controllers;
 
-import placefinder.entities.FavoriteLocation;
 import placefinder.interface_adapters.viewmodels.PreferencesViewModel;
+import placefinder.usecases.favouritelocation.AddFavoriteInputBoundary;
+import placefinder.usecases.favouritelocation.AddFavoriteInputData;
+import placefinder.usecases.favouritelocation.DeleteFavoriteInputBoundary;
+import placefinder.usecases.favouritelocation.DeleteFavoriteInputData;
 import placefinder.usecases.preferences.*;
 
 import java.util.List;
