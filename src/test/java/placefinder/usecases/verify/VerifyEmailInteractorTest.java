@@ -10,17 +10,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Comprehensive unit tests for {@link VerifyEmailInteractor}.
+ * unit tests for {@link VerifyEmailInteractor}.
  *
- * <p>This suite is intentionally designed to exercise:
+ * <p>This suite is designed to exercise:
  * <ul>
  *     <li>All lines of code (100% line coverage).</li>
  *     <li>All decision outcomes / paths (100% branch coverage).</li>
  * </ul>
  *
- * <p>The tests treat the interactor as a pure application service:
- * external dependencies (persistence + presenter) are mocked,
- * while the domain {@link User} entity is used as a real object.
  */
 class VerifyEmailInteractorTest {
 
