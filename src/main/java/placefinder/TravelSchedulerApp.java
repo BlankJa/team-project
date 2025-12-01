@@ -66,7 +66,7 @@ public class TravelSchedulerApp {
 
         // Sender email account for verification codes
         EmailGateway emailGateway = new SmtpEmailGateway(
-                "subhan.akbar908@gmail.com",    // your Gmail address
+                "subhanakbar908@gmail.com",    // your Gmail address
                 "eqrsbydralnvylzm"              // your 16-char app password
         );
 
