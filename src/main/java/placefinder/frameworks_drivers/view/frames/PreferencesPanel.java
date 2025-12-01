@@ -4,6 +4,7 @@ import placefinder.frameworks_drivers.view.components.swing.Button;
 import placefinder.frameworks_drivers.view.components.swing.MyTextField;
 import placefinder.frameworks_drivers.view.components.swing.PanelRound;
 import placefinder.entities.DayTripExperienceCategories;
+import placefinder.entities.FavoriteLocation;
 import placefinder.interface_adapters.controllers.PreferencesController;
 import placefinder.interface_adapters.viewmodels.PreferencesViewModel;
 
@@ -13,9 +14,6 @@ import java.awt.*;
 import java.util.*;
 import java.util.List;
 
-/**
- * UI panel for displaying and editing user preferences including radius and categories.
- */
 public class PreferencesPanel extends JPanel {
 
     private final AppFrame appFrame;
@@ -27,6 +25,10 @@ public class PreferencesPanel extends JPanel {
     private JPanel subCategoriesPanel;
     private Map<String, Map<String, JCheckBox>> subCategoryCheckboxes = new HashMap<>();
     private Map<String, List<String>> currentSelectedCategories = new HashMap<>();
+    private DefaultListModel<FavoriteLocation> favListModel;
+    private JList<FavoriteLocation> favList;
+    private MyTextField favNameField;
+    private MyTextField favAddressField;
     private JLabel messageLabel;
 
     public PreferencesPanel(AppFrame appFrame,
@@ -77,7 +79,7 @@ public class PreferencesPanel extends JPanel {
         title.setFont(new Font("sansserif", Font.BOLD, 28));
         title.setForeground(new Color(40, 40, 40));
 
-        JLabel subtitle = new JLabel("Set radius and interests to personalize your day trips.");
+        JLabel subtitle = new JLabel("Set radius, interests, and favorite locations to personalize your day trips.");
         subtitle.setFont(new Font("sansserif", Font.PLAIN, 15));
         subtitle.setForeground(new Color(120, 120, 120));
 
@@ -93,7 +95,7 @@ public class PreferencesPanel extends JPanel {
         backButton.setBackground(new Color(230, 230, 230));
         backButton.setForeground(new Color(60, 60, 60));
         backButton.setFont(new Font("sansserif", Font.BOLD, 12));
-        backButton.addActionListener(e -> appFrame.showLogin());
+        backButton.addActionListener(e -> appFrame.showDashboard());
 
         header.add(titleBox, BorderLayout.WEST);
         header.add(backButton, BorderLayout.EAST);
@@ -101,41 +103,46 @@ public class PreferencesPanel extends JPanel {
         card.add(header, BorderLayout.NORTH);
 
         // ===== Center content =====
-        JPanel center = new JPanel();
+        JPanel center = new JPanel(new GridLayout(1, 2, 20, 0));
         center.setOpaque(false);
-        center.setLayout(new BoxLayout(center, BoxLayout.Y_AXIS));
-        center.setBorder(new EmptyBorder(10, 10, 10, 10));
         card.add(center, BorderLayout.CENTER);
+
+        // --- Left side: radius + interests ---
+        JPanel left = new JPanel();
+        left.setOpaque(false);
+        left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS));
+        left.setBorder(new EmptyBorder(10, 10, 10, 10));
+        center.add(left);
 
         JLabel radiusLabel = new JLabel("Radius (km)");
         radiusLabel.setFont(new Font("sansserif", Font.BOLD, 13));
         radiusLabel.setForeground(new Color(70, 70, 70));
-        center.add(radiusLabel);
+        left.add(radiusLabel);
 
         JLabel radiusHint = new JLabel("0 – 5 km");
         radiusHint.setFont(new Font("sansserif", Font.PLAIN, 11));
         radiusHint.setForeground(new Color(140, 140, 140));
-        center.add(radiusHint);
-        center.add(Box.createVerticalStrut(5));
+        left.add(radiusHint);
+        left.add(Box.createVerticalStrut(5));
 
         radiusSpinner = new JSpinner(new SpinnerNumberModel(2.0, 0.0, 5.0, 0.5));
         radiusSpinner.setFont(new Font("sansserif", Font.PLAIN, 13));
         ((JSpinner.DefaultEditor) radiusSpinner.getEditor()).getTextField().setColumns(4);
-        center.add(radiusSpinner);
-        center.add(Box.createVerticalStrut(20));
+        left.add(radiusSpinner);
+        left.add(Box.createVerticalStrut(20));
 
         // --- Categories selection ---
         JLabel categoriesLabel = new JLabel("Categories (at least 3 sub-categories required)");
         categoriesLabel.setFont(new Font("sansserif", Font.BOLD, 13));
         categoriesLabel.setForeground(new Color(70, 70, 70));
-        center.add(categoriesLabel);
-        center.add(Box.createVerticalStrut(5));
+        left.add(categoriesLabel);
+        left.add(Box.createVerticalStrut(5));
 
         JLabel categoryHint = new JLabel("Select a main category, then choose sub-categories");
         categoryHint.setFont(new Font("sansserif", Font.PLAIN, 11));
         categoryHint.setForeground(new Color(140, 140, 140));
-        center.add(categoryHint);
-        center.add(Box.createVerticalStrut(5));
+        left.add(categoryHint);
+        left.add(Box.createVerticalStrut(5));
 
         List<String> mainCategories = DayTripExperienceCategories.getMainCategories();
         mainCategoryCombo = new JComboBox<>(mainCategories.toArray(new String[0]));
@@ -153,18 +160,18 @@ public class PreferencesPanel extends JPanel {
         });
         mainCategoryCombo.setSelectedIndex(-1);
         mainCategoryCombo.addActionListener(e -> updateSubCategoriesPanel());
-        center.add(mainCategoryCombo);
-        center.add(Box.createVerticalStrut(8));
+        left.add(mainCategoryCombo);
+        left.add(Box.createVerticalStrut(8));
 
         subCategoriesPanel = new JPanel();
         subCategoriesPanel.setLayout(new BoxLayout(subCategoriesPanel, BoxLayout.Y_AXIS));
         subCategoriesPanel.setOpaque(false);
         JScrollPane subCategoriesScroll = new JScrollPane(subCategoriesPanel);
         subCategoriesScroll.setBorder(BorderFactory.createEmptyBorder());
-        subCategoriesScroll.setPreferredSize(new Dimension(0, 200));
-        center.add(subCategoriesScroll);
+        subCategoriesScroll.setPreferredSize(new Dimension(0, 150));
+        left.add(subCategoriesScroll);
 
-        center.add(Box.createVerticalStrut(15));
+        left.add(Box.createVerticalStrut(15));
 
         Button saveButton = new Button();
         saveButton.setText("Save Preferences");
@@ -173,7 +180,74 @@ public class PreferencesPanel extends JPanel {
         saveButton.setFont(new Font("sansserif", Font.BOLD, 13));
         saveButton.addActionListener(e -> savePreferences());
         saveButton.setAlignmentX(Component.LEFT_ALIGNMENT);
-        center.add(saveButton);
+        left.add(saveButton);
+
+        // --- Right side: favorite locations ---
+        JPanel right = new JPanel(new BorderLayout(5, 5));
+        right.setOpaque(false);
+        right.setBorder(new EmptyBorder(10, 10, 10, 10));
+        center.add(right);
+
+        JLabel favTitle = new JLabel("Favorite locations");
+        favTitle.setFont(new Font("sansserif", Font.BOLD, 13));
+        favTitle.setForeground(new Color(70, 70, 70));
+        right.add(favTitle, BorderLayout.NORTH);
+
+        favListModel = new DefaultListModel<>();
+        favList = new JList<>(favListModel);
+        favList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        favList.setVisibleRowCount(6);
+        favList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                JLabel lbl = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof FavoriteLocation) {
+                    FavoriteLocation fav = (FavoriteLocation) value;
+                    lbl.setText(fav.getName() + "  \u2013  " + fav.getAddress());
+                }
+                lbl.setBorder(new EmptyBorder(2, 4, 2, 4));
+                return lbl;
+            }
+        });
+        JScrollPane favScroll = new JScrollPane(favList);
+        favScroll.setBorder(BorderFactory.createEmptyBorder());
+        right.add(favScroll, BorderLayout.CENTER);
+
+        JPanel favBottom = new JPanel();
+        favBottom.setOpaque(false);
+        favBottom.setLayout(new BoxLayout(favBottom, BoxLayout.Y_AXIS));
+        right.add(favBottom, BorderLayout.SOUTH);
+
+        favNameField = new MyTextField();
+        favNameField.setHint("Label (e.g., Home, Downtown)");
+        favBottom.add(favNameField);
+        favBottom.add(Box.createVerticalStrut(8));
+
+        favAddressField = new MyTextField();
+        favAddressField.setHint("Address or city");
+        favBottom.add(favAddressField);
+        favBottom.add(Box.createVerticalStrut(8));
+
+        JPanel favButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        favButtons.setOpaque(false);
+        Button addFavButton = new Button();
+        addFavButton.setText("Add");
+        addFavButton.setBackground(new Color(7, 164, 121));
+        addFavButton.setForeground(Color.WHITE);
+        addFavButton.setFont(new Font("sansserif", Font.BOLD, 12));
+        addFavButton.addActionListener(e -> addFavorite());
+
+        Button delFavButton = new Button();
+        delFavButton.setText("Delete");
+        delFavButton.setBackground(new Color(220, 80, 80));
+        delFavButton.setForeground(Color.WHITE);
+        delFavButton.setFont(new Font("sansserif", Font.BOLD, 12));
+        delFavButton.addActionListener(e -> deleteFavorite());
+
+        favButtons.add(addFavButton);
+        favButtons.add(delFavButton);
+        favBottom.add(favButtons);
 
         // ===== Footer message =====
         messageLabel = new JLabel(" ", SwingConstants.LEFT);
@@ -191,6 +265,14 @@ public class PreferencesPanel extends JPanel {
 
         // radius
         radiusSpinner.setValue(preferencesVM.getRadiusKm());
+
+        // favorite locations
+        favListModel.clear();
+        if (preferencesVM.getFavorites() != null) {
+            for (FavoriteLocation fav : preferencesVM.getFavorites()) {
+                favListModel.addElement(fav);
+            }
+        }
 
         // categories
         Map<String, List<String>> savedCategories = preferencesVM.getSelectedCategories();
@@ -215,7 +297,7 @@ public class PreferencesPanel extends JPanel {
 
     private void updateSubCategoriesPanel() {
         saveCurrentMainCategorySelection();
-        
+
         subCategoriesPanel.removeAll();
         String selectedMainCategory = (String) mainCategoryCombo.getSelectedItem();
         if (selectedMainCategory == null) {
@@ -226,13 +308,13 @@ public class PreferencesPanel extends JPanel {
 
         List<String> subCategories = DayTripExperienceCategories.getSubCategories(selectedMainCategory);
         Map<String, JCheckBox> checkboxes = new HashMap<>();
-        
+
         for (String subCategory : subCategories) {
             JCheckBox cb = new JCheckBox(formatSubCategoryName(subCategory));
             cb.setOpaque(false);
             cb.setFont(new Font("sansserif", Font.PLAIN, 11));
             cb.setForeground(new Color(60, 60, 60));
-            
+
             boolean isSelected = false;
             if (currentSelectedCategories.containsKey(selectedMainCategory)) {
                 List<String> selectedSubs = currentSelectedCategories.get(selectedMainCategory);
@@ -244,13 +326,13 @@ public class PreferencesPanel extends JPanel {
                     isSelected = selectedSubs != null && selectedSubs.contains(subCategory);
                 }
             }
-            
+
             cb.setSelected(isSelected);
-            
+
             checkboxes.put(subCategory, cb);
             subCategoriesPanel.add(cb);
         }
-        
+
         subCategoryCheckboxes.put(selectedMainCategory, checkboxes);
         subCategoriesPanel.revalidate();
         subCategoriesPanel.repaint();
@@ -283,8 +365,8 @@ public class PreferencesPanel extends JPanel {
             String lastPart = parts[parts.length - 1];
             String formatted = lastPart.replace("_", " ");
             if (!formatted.isEmpty()) {
-                formatted = Character.toUpperCase(formatted.charAt(0)) + 
-                           (formatted.length() > 1 ? formatted.substring(1) : "");
+                formatted = Character.toUpperCase(formatted.charAt(0)) +
+                        (formatted.length() > 1 ? formatted.substring(1) : "");
             }
             return formatted;
         }
@@ -298,7 +380,7 @@ public class PreferencesPanel extends JPanel {
         double radius = ((Number) radiusSpinner.getValue()).doubleValue();
 
         saveCurrentMainCategorySelection();
-        
+
         Map<String, List<String>> selectedCategories = new HashMap<>(currentSelectedCategories);
 
         preferencesController.savePreferences(userId, radius, selectedCategories);
@@ -313,5 +395,59 @@ public class PreferencesPanel extends JPanel {
         String msg = preferencesVM.getMessage();
         messageLabel.setText(msg != null ? msg : " ");
     }
-}
 
+    private void addFavorite() {
+        Integer userId = appFrame.getCurrentUserId();
+        if (userId == null) return;
+        String name = favNameField.getText().trim();
+        String addr = favAddressField.getText().trim();
+        if (name.isEmpty() || addr.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Name and address are required.",
+                    "Validation",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        preferencesController.addFavorite(userId, name, addr);
+        if (preferencesVM.getErrorMessage() != null) {
+            JOptionPane.showMessageDialog(this,
+                    preferencesVM.getErrorMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // reload favorites from view model
+        favListModel.clear();
+        if (preferencesVM.getFavorites() != null) {
+            for (FavoriteLocation fav : preferencesVM.getFavorites()) {
+                favListModel.addElement(fav);
+            }
+        }
+        favNameField.setText("");
+        favAddressField.setText("");
+    }
+
+    private void deleteFavorite() {
+        Integer userId = appFrame.getCurrentUserId();
+        if (userId == null) return;
+        FavoriteLocation selected = favList.getSelectedValue();
+        if (selected == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Please select a favorite location to delete.",
+                    "No selection",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        preferencesController.deleteFavorite(userId, selected.getId());
+        if (preferencesVM.getErrorMessage() != null) {
+            JOptionPane.showMessageDialog(this,
+                    preferencesVM.getErrorMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        } else {
+            favListModel.removeElement(selected);
+        }
+    }
+}
