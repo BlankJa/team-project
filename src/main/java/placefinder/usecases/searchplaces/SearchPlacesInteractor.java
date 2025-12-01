@@ -167,7 +167,6 @@ public class SearchPlacesInteractor implements SearchPlacesInputBoundary {
         return score;
     }
 
-    // Very similar style to your WeatherAdvicePanel: full sentence advice
     private String buildWeatherAdvice(WeatherSummary weather) {
         StringBuilder sb = new StringBuilder();
 

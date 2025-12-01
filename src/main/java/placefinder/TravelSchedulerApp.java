@@ -2,7 +2,6 @@ package placefinder;
 
 import javax.swing.SwingUtilities;
 
-
 import placefinder.frameworks_drivers.database.Database;
 import placefinder.frameworks_drivers.dataaccess.SqliteUserDataAccess;
 import placefinder.frameworks_drivers.dataaccess.SqlitePreferenceDataAccess;
@@ -61,8 +60,6 @@ import placefinder.frameworks_drivers.view.frames.SplashScreen;
 public class TravelSchedulerApp {
 
     public static void main(String[] args) {
-
-        // OPTIONAL: print Java version so you can confirm you're on 21
         System.out.println("Java version = " + System.getProperty("java.version"));
 
         // Ensure database is initialized (triggers static init)
@@ -81,7 +78,8 @@ public class TravelSchedulerApp {
         WeatherDataAccessInterface weatherDataAccessInterface = new OpenMeteoWeatherGatewayImpl();
 
         EmailDataAccessInterface emailDataAccessInterface = new SmtpEmailDataAccess(
-                "subhanakbar908@gmail.com","eqrsbydralnvylzm"
+                "subhanakbar908@gmail.com",
+                "eqrsbydralnvylzm"
         );
 
         // ========== VIEW MODELS ==========
@@ -138,7 +136,9 @@ public class TravelSchedulerApp {
         );
 
         // ---- Search Places / Build Plan / Save Plan ----
-        PlanCreationPresenter planCreationPresenter = new PlanCreationPresenter(planCreationVM);
+        SearchPlacesPresenter searchPlacesPresenter = new SearchPlacesPresenter(planCreationVM);
+        BuildPlanPresenter buildPlanPresenter = new BuildPlanPresenter(planCreationVM);
+        SavePlanPresenter savePlanPresenter = new SavePlanPresenter(planCreationVM);
 
         SearchPlacesInputBoundary searchPlacesInteractor =
                 new SearchPlacesInteractor(
@@ -146,21 +146,35 @@ public class TravelSchedulerApp {
                         geocodingDataAccessInterface,
                         placesDataAccessInterface,
                         weatherDataAccessInterface,
-                        planCreationPresenter
+                        searchPlacesPresenter
                 );
 
         BuildPlanInputBoundary buildPlanInteractor =
-                new BuildPlanInteractor(preferenceDataAccessInterface, geocodingDataAccessInterface, planCreationPresenter);
+                new BuildPlanInteractor(
+                        preferenceDataAccessInterface,
+                        geocodingDataAccessInterface,
+                        buildPlanPresenter
+                );
 
         SavePlanInputBoundary savePlanInteractor =
-                new SavePlanInteractor(planDataAccessInterface, planCreationPresenter);
+                new SavePlanInteractor(
+                        planDataAccessInterface,
+                        savePlanPresenter
+                );
 
-        PlanCreationController planCreationController = new PlanCreationController(
-                searchPlacesInteractor,
-                buildPlanInteractor,
-                savePlanInteractor,
-                planCreationVM
-        );
+        SearchPlacesController searchPlacesController =
+                new SearchPlacesController(searchPlacesInteractor, planCreationVM);
+        BuildPlanController buildPlanController =
+                new BuildPlanController(buildPlanInteractor, planCreationVM);
+        SavePlanController savePlanController =
+                new SavePlanController(savePlanInteractor, planCreationVM);
+
+        PlanCreationController planCreationController =
+                new PlanCreationController(
+                        searchPlacesController,
+                        buildPlanController,
+                        savePlanController
+                );
 
         // ---- Plans Dashboard / Details / Delete / Apply Prefs ----
         ListPlansPresenter listPlansPresenter = new ListPlansPresenter(dashboardVM);
@@ -210,7 +224,7 @@ public class TravelSchedulerApp {
         WeatherAdviceController weatherAdviceController =
                 new WeatherAdviceController(weatherAdviceInteractor, weatherAdviceVM);
 
-        // ========== START UI (Swing + JavaFX) ==========
+        // ========== START UI ==========
         SwingUtilities.invokeLater(() -> {
             SplashScreen splash = new SplashScreen();
 
@@ -235,7 +249,6 @@ public class TravelSchedulerApp {
                     weatherAdviceVM
             );
 
-            // Show splash screen, then show main window after it closes
             splash.showSplash(() -> frame.setVisible(true));
         });
     }
