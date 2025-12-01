@@ -1,27 +1,27 @@
 package placefinder.usecases.preferences;
 
 import placefinder.entities.PreferenceProfile;
-import placefinder.usecases.ports.PreferenceGateway;
+import placefinder.usecases.dataacessinterfaces.PreferenceDataAccessInterface;
 
 /**
  * Interactor for retrieving user preferences from the database.
  */
 public class GetPreferencesInteractor implements GetPreferencesInputBoundary {
 
-    private final PreferenceGateway preferenceGateway;
+    private final PreferenceDataAccessInterface preferenceDataAccessInterface;
     private final GetPreferencesOutputBoundary presenter;
 
-    public GetPreferencesInteractor(PreferenceGateway preferenceGateway,
+    public GetPreferencesInteractor(PreferenceDataAccessInterface preferenceDataAccessInterface,
                                     GetPreferencesOutputBoundary presenter) {
-        this.preferenceGateway = preferenceGateway;
+        this.preferenceDataAccessInterface = preferenceDataAccessInterface;
         this.presenter = presenter;
     }
 
     @Override
     public void execute(GetPreferencesInputData inputData) {
         try {
-            PreferenceProfile profile = preferenceGateway.loadForUser(inputData.getUserId());
-            var favorites = preferenceGateway.listFavorites(inputData.getUserId());
+            PreferenceProfile profile = preferenceDataAccessInterface.loadForUser(inputData.getUserId());
+            var favorites = preferenceDataAccessInterface.listFavorites(inputData.getUserId());
             presenter.present(new GetPreferencesOutputData(
                     profile.getRadiusKm(),
                     favorites,

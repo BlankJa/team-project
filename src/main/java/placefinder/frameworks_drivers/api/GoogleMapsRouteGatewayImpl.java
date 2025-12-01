@@ -5,13 +5,13 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import placefinder.entities.*;
-import placefinder.usecases.ports.RouteGateway;
+import placefinder.usecases.dataacessinterfaces.RouteDataAccessInterface;
 
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GoogleMapsRouteGatewayImpl implements RouteGateway {
+public class GoogleMapsRouteGatewayImpl implements RouteDataAccessInterface {
     private final String apiKey;
 
     public GoogleMapsRouteGatewayImpl() {

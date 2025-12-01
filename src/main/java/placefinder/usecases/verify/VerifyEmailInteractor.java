@@ -1,19 +1,19 @@
 package placefinder.usecases.verify;
 
 import placefinder.entities.User;
-import placefinder.usecases.ports.UserGateway;
+import placefinder.usecases.dataacessinterfaces.UserDataAccessInterface;
 
 /**
  * Use case interactor for verifying a user's email with a code.
  */
 public class VerifyEmailInteractor implements VerifyEmailInputBoundary {
 
-    private final UserGateway userGateway;
+    private final UserDataAccessInterface userDataAccessInterface;
     private final VerifyEmailOutputBoundary presenter;
 
-    public VerifyEmailInteractor(UserGateway userGateway,
+    public VerifyEmailInteractor(UserDataAccessInterface userDataAccessInterface,
                                  VerifyEmailOutputBoundary presenter) {
-        this.userGateway = userGateway;
+        this.userDataAccessInterface = userDataAccessInterface;
         this.presenter = presenter;
     }
 
@@ -30,7 +30,7 @@ public class VerifyEmailInteractor implements VerifyEmailInputBoundary {
         }
 
         try {
-            User user = userGateway.findByEmail(email);
+            User user = userDataAccessInterface.findByEmail(email);
             System.out.println("[VERIFY] findByEmail returned: "
                     + (user == null ? "null" : "user id=" + user.getId()));
 
@@ -53,7 +53,7 @@ public class VerifyEmailInteractor implements VerifyEmailInputBoundary {
             // Success: mark verified and clear code
             user.setVerified(true);
             user.setVerificationCode(null);
-            userGateway.save(user);
+            userDataAccessInterface.save(user);
 
             presenter.present(new VerifyEmailOutputData(true,
                     "Email verified successfully. You can now log in."));

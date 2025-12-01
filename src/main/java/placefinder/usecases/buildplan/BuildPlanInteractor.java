@@ -1,8 +1,8 @@
 package placefinder.usecases.buildplan;
 
 import placefinder.entities.*;
-import placefinder.usecases.ports.GeocodingGateway;
-import placefinder.usecases.ports.PreferenceGateway;
+import placefinder.usecases.dataacessinterfaces.GeocodingDataAccessInterface;
+import placefinder.usecases.dataacessinterfaces.PreferenceDataAccessInterface;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -14,15 +14,15 @@ import java.util.List;
  */
 public class BuildPlanInteractor implements BuildPlanInputBoundary {
 
-    private final PreferenceGateway preferenceGateway;
-    private final GeocodingGateway geocodingGateway;
+    private final PreferenceDataAccessInterface preferenceDataAccessInterface;
+    private final GeocodingDataAccessInterface geocodingDataAccessInterface;
     private final BuildPlanOutputBoundary presenter;
 
-    public BuildPlanInteractor(PreferenceGateway preferenceGateway,
-                               GeocodingGateway geocodingGateway,
+    public BuildPlanInteractor(PreferenceDataAccessInterface preferenceDataAccessInterface,
+                               GeocodingDataAccessInterface geocodingDataAccessInterface,
                                BuildPlanOutputBoundary presenter) {
-        this.preferenceGateway = preferenceGateway;
-        this.geocodingGateway = geocodingGateway;
+        this.preferenceDataAccessInterface = preferenceDataAccessInterface;
+        this.geocodingDataAccessInterface = geocodingDataAccessInterface;
         this.presenter = presenter;
     }
 
@@ -34,13 +34,13 @@ public class BuildPlanInteractor implements BuildPlanInputBoundary {
                         "Please select at least one place."));
                 return;
             }
-            GeocodeResult geo = geocodingGateway.geocode(inputData.getLocationText());
+            GeocodeResult geo = geocodingDataAccessInterface.geocode(inputData.getLocationText());
             if (geo == null) {
                 presenter.present(new BuildPlanOutputData(null, false,
                         "Could not find that location."));
                 return;
             }
-            PreferenceProfile profile = preferenceGateway.loadForUser(inputData.getUserId());
+            PreferenceProfile profile = preferenceDataAccessInterface.loadForUser(inputData.getUserId());
             LocalDate date = LocalDate.parse(inputData.getDate());
             LocalTime start = LocalTime.parse(inputData.getStartTime());
             LocalTime current = start;

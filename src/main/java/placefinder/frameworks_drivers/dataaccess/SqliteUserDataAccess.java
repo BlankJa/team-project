@@ -1,7 +1,8 @@
-package placefinder.frameworks_drivers.database;
+package placefinder.frameworks_drivers.dataaccess;
 
 import placefinder.entities.User;
-import placefinder.usecases.ports.UserGateway;
+import placefinder.frameworks_drivers.database.Database;
+import placefinder.usecases.dataacessinterfaces.UserDataAccessInterface;
 
 import java.sql.*;
 
@@ -9,7 +10,7 @@ import java.sql.*;
  * SQLite implementation of the UserGateway interface.
  * Provides database operations for user entities using SQLite.
  */
-public class SqliteUserGatewayImpl implements UserGateway {
+public class SqliteUserDataAccess implements UserDataAccessInterface {
 
     @Override
     public User findByEmail(String email) throws Exception {

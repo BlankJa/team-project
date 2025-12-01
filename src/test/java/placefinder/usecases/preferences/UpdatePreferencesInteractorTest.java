@@ -4,7 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import placefinder.entities.PreferenceProfile;
-import placefinder.usecases.ports.PreferenceGateway;
+import placefinder.usecases.dataacessinterfaces.PreferenceDataAccessInterface;
 
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +40,7 @@ class UpdatePreferencesInteractorTest {
     // -------------------------------------------------------------------------
 
     /** Persistence port used by the interactor (mock). */
-    private PreferenceGateway preferenceGateway;
+    private PreferenceDataAccessInterface preferenceDataAccessInterface;
 
     /** Presenter / output boundary used by the interactor (mock). */
     private UpdatePreferencesOutputBoundary presenter;
@@ -54,9 +54,9 @@ class UpdatePreferencesInteractorTest {
 
     @BeforeEach
     void setUp() {
-        preferenceGateway = mock(PreferenceGateway.class);
+        preferenceDataAccessInterface = mock(PreferenceDataAccessInterface.class);
         presenter         = mock(UpdatePreferencesOutputBoundary.class);
-        interactor        = new UpdatePreferencesInteractor(preferenceGateway, presenter);
+        interactor        = new UpdatePreferencesInteractor(preferenceDataAccessInterface, presenter);
     }
 
     // -------------------------------------------------------------------------
@@ -93,7 +93,7 @@ class UpdatePreferencesInteractorTest {
 
         interactor.execute(input);
 
-        verifyNoInteractions(preferenceGateway);
+        verifyNoInteractions(preferenceDataAccessInterface);
 
         UpdatePreferencesOutputData out = capturePresenterOutput();
         assertFalse(out.isSuccess());
@@ -115,7 +115,7 @@ class UpdatePreferencesInteractorTest {
 
         interactor.execute(input);
 
-        verifyNoInteractions(preferenceGateway);
+        verifyNoInteractions(preferenceDataAccessInterface);
 
         UpdatePreferencesOutputData out = capturePresenterOutput();
         assertFalse(out.isSuccess());
@@ -136,12 +136,12 @@ class UpdatePreferencesInteractorTest {
                 userId, validRadius, categories);
 
         PreferenceProfile existingProfile = new PreferenceProfile(userId, 2.0);
-        when(preferenceGateway.loadForUser(userId)).thenReturn(existingProfile);
+        when(preferenceDataAccessInterface.loadForUser(userId)).thenReturn(existingProfile);
 
         interactor.execute(input);
 
-        verify(preferenceGateway).loadForUser(userId);
-        verify(preferenceGateway).saveForUser(any(PreferenceProfile.class));
+        verify(preferenceDataAccessInterface).loadForUser(userId);
+        verify(preferenceDataAccessInterface).saveForUser(any(PreferenceProfile.class));
 
         UpdatePreferencesOutputData out = capturePresenterOutput();
         assertTrue(out.isSuccess());
@@ -162,12 +162,12 @@ class UpdatePreferencesInteractorTest {
                 userId, validRadius, categories);
 
         PreferenceProfile existingProfile = new PreferenceProfile(userId, 2.0);
-        when(preferenceGateway.loadForUser(userId)).thenReturn(existingProfile);
+        when(preferenceDataAccessInterface.loadForUser(userId)).thenReturn(existingProfile);
 
         interactor.execute(input);
 
-        verify(preferenceGateway).loadForUser(userId);
-        verify(preferenceGateway).saveForUser(any(PreferenceProfile.class));
+        verify(preferenceDataAccessInterface).loadForUser(userId);
+        verify(preferenceDataAccessInterface).saveForUser(any(PreferenceProfile.class));
 
         UpdatePreferencesOutputData out = capturePresenterOutput();
         assertTrue(out.isSuccess());
@@ -188,7 +188,7 @@ class UpdatePreferencesInteractorTest {
 
         interactor.execute(input);
 
-        verifyNoInteractions(preferenceGateway);
+        verifyNoInteractions(preferenceDataAccessInterface);
 
         UpdatePreferencesOutputData out = capturePresenterOutput();
         assertFalse(out.isSuccess());
@@ -211,7 +211,7 @@ class UpdatePreferencesInteractorTest {
 
         interactor.execute(input);
 
-        verifyNoInteractions(preferenceGateway);
+        verifyNoInteractions(preferenceDataAccessInterface);
 
         UpdatePreferencesOutputData out = capturePresenterOutput();
         assertFalse(out.isSuccess());
@@ -231,7 +231,7 @@ class UpdatePreferencesInteractorTest {
 
         interactor.execute(input);
 
-        verifyNoInteractions(preferenceGateway);
+        verifyNoInteractions(preferenceDataAccessInterface);
 
         UpdatePreferencesOutputData out = capturePresenterOutput();
         assertFalse(out.isSuccess());
@@ -252,7 +252,7 @@ class UpdatePreferencesInteractorTest {
 
         interactor.execute(input);
 
-        verifyNoInteractions(preferenceGateway);
+        verifyNoInteractions(preferenceDataAccessInterface);
 
         UpdatePreferencesOutputData out = capturePresenterOutput();
         assertFalse(out.isSuccess());
@@ -275,7 +275,7 @@ class UpdatePreferencesInteractorTest {
 
         interactor.execute(input);
 
-        verifyNoInteractions(preferenceGateway);
+        verifyNoInteractions(preferenceDataAccessInterface);
 
         UpdatePreferencesOutputData out = capturePresenterOutput();
         assertFalse(out.isSuccess());
@@ -296,12 +296,12 @@ class UpdatePreferencesInteractorTest {
                 userId, validRadius, categories);
 
         PreferenceProfile existingProfile = new PreferenceProfile(userId, 1.0);
-        when(preferenceGateway.loadForUser(userId)).thenReturn(existingProfile);
+        when(preferenceDataAccessInterface.loadForUser(userId)).thenReturn(existingProfile);
 
         interactor.execute(input);
 
-        verify(preferenceGateway).loadForUser(userId);
-        verify(preferenceGateway).saveForUser(any(PreferenceProfile.class));
+        verify(preferenceDataAccessInterface).loadForUser(userId);
+        verify(preferenceDataAccessInterface).saveForUser(any(PreferenceProfile.class));
 
         UpdatePreferencesOutputData out = capturePresenterOutput();
         assertTrue(out.isSuccess());
@@ -327,15 +327,15 @@ class UpdatePreferencesInteractorTest {
                 userId, newRadius, categories);
 
         PreferenceProfile existingProfile = new PreferenceProfile(userId, 2.0);
-        when(preferenceGateway.loadForUser(userId)).thenReturn(existingProfile);
+        when(preferenceDataAccessInterface.loadForUser(userId)).thenReturn(existingProfile);
 
         interactor.execute(input);
 
-        verify(preferenceGateway).loadForUser(userId);
+        verify(preferenceDataAccessInterface).loadForUser(userId);
         
         ArgumentCaptor<PreferenceProfile> profileCaptor = 
                 ArgumentCaptor.forClass(PreferenceProfile.class);
-        verify(preferenceGateway).saveForUser(profileCaptor.capture());
+        verify(preferenceDataAccessInterface).saveForUser(profileCaptor.capture());
         
         PreferenceProfile savedProfile = profileCaptor.getValue();
         assertEquals(userId, savedProfile.getUserId());
@@ -361,13 +361,13 @@ class UpdatePreferencesInteractorTest {
                 userId, newRadius, validCategories);
 
         PreferenceProfile existingProfile = new PreferenceProfile(userId, 1.0);
-        when(preferenceGateway.loadForUser(userId)).thenReturn(existingProfile);
+        when(preferenceDataAccessInterface.loadForUser(userId)).thenReturn(existingProfile);
 
         interactor.execute(input);
 
         ArgumentCaptor<PreferenceProfile> profileCaptor = 
                 ArgumentCaptor.forClass(PreferenceProfile.class);
-        verify(preferenceGateway).saveForUser(profileCaptor.capture());
+        verify(preferenceDataAccessInterface).saveForUser(profileCaptor.capture());
         
         PreferenceProfile savedProfile = profileCaptor.getValue();
         assertNotNull(savedProfile.getSelectedCategories());
@@ -395,13 +395,13 @@ class UpdatePreferencesInteractorTest {
         UpdatePreferencesInputData input = new UpdatePreferencesInputData(
                 userId, validRadius, categories);
 
-        when(preferenceGateway.loadForUser(userId))
+        when(preferenceDataAccessInterface.loadForUser(userId))
                 .thenThrow(new Exception("Database connection failed"));
 
         interactor.execute(input);
 
-        verify(preferenceGateway).loadForUser(userId);
-        verify(preferenceGateway, never()).saveForUser(any());
+        verify(preferenceDataAccessInterface).loadForUser(userId);
+        verify(preferenceDataAccessInterface, never()).saveForUser(any());
 
         UpdatePreferencesOutputData out = capturePresenterOutput();
         assertFalse(out.isSuccess());
@@ -422,14 +422,14 @@ class UpdatePreferencesInteractorTest {
                 userId, validRadius, categories);
 
         PreferenceProfile existingProfile = new PreferenceProfile(userId, 1.0);
-        when(preferenceGateway.loadForUser(userId)).thenReturn(existingProfile);
+        when(preferenceDataAccessInterface.loadForUser(userId)).thenReturn(existingProfile);
         doThrow(new Exception("Save operation failed"))
-                .when(preferenceGateway).saveForUser(any(PreferenceProfile.class));
+                .when(preferenceDataAccessInterface).saveForUser(any(PreferenceProfile.class));
 
         interactor.execute(input);
 
-        verify(preferenceGateway).loadForUser(userId);
-        verify(preferenceGateway).saveForUser(any(PreferenceProfile.class));
+        verify(preferenceDataAccessInterface).loadForUser(userId);
+        verify(preferenceDataAccessInterface).saveForUser(any(PreferenceProfile.class));
 
         UpdatePreferencesOutputData out = capturePresenterOutput();
         assertFalse(out.isSuccess());
@@ -450,7 +450,7 @@ class UpdatePreferencesInteractorTest {
                 userId, validRadius, categories);
 
         Exception ex = new Exception((String) null);
-        when(preferenceGateway.loadForUser(userId)).thenThrow(ex);
+        when(preferenceDataAccessInterface.loadForUser(userId)).thenThrow(ex);
 
         interactor.execute(input);
 

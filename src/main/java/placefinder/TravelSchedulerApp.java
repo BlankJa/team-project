@@ -8,22 +8,26 @@ import javax.swing.SwingUtilities;
 // on the JavaFX Application Thread.
 
 import placefinder.frameworks_drivers.database.Database;
-import placefinder.frameworks_drivers.database.SqliteUserGatewayImpl;
-import placefinder.frameworks_drivers.database.SqlitePreferenceGatewayImpl;
-import placefinder.frameworks_drivers.database.SqlitePlanGatewayImpl;
-import placefinder.frameworks_drivers.database.SmtpEmailGateway;
+import placefinder.frameworks_drivers.dataaccess.SqliteUserDataAccess;
+import placefinder.frameworks_drivers.dataaccess.SqlitePreferenceDataAccess;
+import placefinder.frameworks_drivers.dataaccess.SqlitePlanDataAccess;
+import placefinder.frameworks_drivers.dataaccess.SmtpEmailDataAccess;
 
 import placefinder.frameworks_drivers.api.OpenCageGeocodingGateway;
-import placefinder.frameworks_drivers.api.GeoApifyPlacesGatewayImpl;
+import placefinder.frameworks_drivers.api.GeoApifyGatewayImpl;
 import placefinder.frameworks_drivers.api.OpenMeteoWeatherGatewayImpl;
 
-import placefinder.usecases.ports.UserGateway;
-import placefinder.usecases.ports.PreferenceGateway;
-import placefinder.usecases.ports.PlanGateway;
-import placefinder.usecases.ports.GeocodingGateway;
-import placefinder.usecases.ports.PlacesGateway;
-import placefinder.usecases.ports.WeatherGateway;
-import placefinder.usecases.ports.EmailGateway;
+import placefinder.usecases.favouritelocation.AddFavoriteInputBoundary;
+import placefinder.usecases.favouritelocation.AddFavoriteInteractor;
+import placefinder.usecases.favouritelocation.DeleteFavoriteInputBoundary;
+import placefinder.usecases.favouritelocation.DeleteFavoriteInteractor;
+import placefinder.usecases.dataacessinterfaces.UserDataAccessInterface;
+import placefinder.usecases.dataacessinterfaces.PreferenceDataAccessInterface;
+import placefinder.usecases.dataacessinterfaces.PlanDataAccessInterface;
+import placefinder.usecases.dataacessinterfaces.GeocodingDataAccessInterface;
+import placefinder.usecases.dataacessinterfaces.PlacesDataAccessInterface;
+import placefinder.usecases.dataacessinterfaces.WeatherDataAccessInterface;
+import placefinder.usecases.dataacessinterfaces.EmailDataAccessInterface;
 
 // login & register
 import placefinder.usecases.login.*;
@@ -73,14 +77,14 @@ public class TravelSchedulerApp {
         }
 
         // ========== GATEWAYS (Frameworks & Drivers) ==========
-        UserGateway userGateway = new SqliteUserGatewayImpl();
-        PreferenceGateway preferenceGateway = new SqlitePreferenceGatewayImpl();
-        PlanGateway planGateway = new SqlitePlanGatewayImpl();
-        GeocodingGateway geocodingGateway = new OpenCageGeocodingGateway();
-        PlacesGateway placesGateway = new GeoApifyPlacesGatewayImpl();
-        WeatherGateway weatherGateway = new OpenMeteoWeatherGatewayImpl();
+        UserDataAccessInterface userDataAccessInterface = new SqliteUserDataAccess();
+        PreferenceDataAccessInterface preferenceDataAccessInterface = new SqlitePreferenceDataAccess();
+        PlanDataAccessInterface planDataAccessInterface = new SqlitePlanDataAccess();
+        GeocodingDataAccessInterface geocodingDataAccessInterface = new OpenCageGeocodingGateway();
+        PlacesDataAccessInterface placesDataAccessInterface = new GeoApifyGatewayImpl();
+        WeatherDataAccessInterface weatherDataAccessInterface = new OpenMeteoWeatherGatewayImpl();
 
-        EmailGateway emailGateway = new SmtpEmailGateway(
+        EmailDataAccessInterface emailDataAccessInterface = new SmtpEmailDataAccess(
                 "subhanakbar908@gmail.com","eqrsbydralnvylzm"
         );
 
@@ -99,21 +103,21 @@ public class TravelSchedulerApp {
         // ---- Login ----
         LoginPresenter loginPresenter = new LoginPresenter(loginVM);
         LoginInputBoundary loginInteractor =
-                new LoginInteractor(userGateway, loginPresenter);
+                new LoginInteractor(userDataAccessInterface, loginPresenter);
         LoginController loginController =
                 new LoginController(loginInteractor, loginVM);
 
         // ---- Register (uses EmailGateway) ----
         RegisterPresenter registerPresenter = new RegisterPresenter(registerVM);
         RegisterInputBoundary registerInteractor =
-                new RegisterInteractor(userGateway, registerPresenter, emailGateway);
+                new RegisterInteractor(userDataAccessInterface, registerPresenter, emailDataAccessInterface);
         RegisterController registerController =
                 new RegisterController(registerInteractor, registerVM);
 
         // ---- Verify Email ----
         VerifyEmailPresenter verifyPresenter = new VerifyEmailPresenter(verifyVM);
         VerifyEmailInputBoundary verifyInteractor =
-                new VerifyEmailInteractor(userGateway, verifyPresenter);
+                new VerifyEmailInteractor(userDataAccessInterface, verifyPresenter);
         VerifyEmailController verifyController =
                 new VerifyEmailController(verifyInteractor, verifyVM);
 
@@ -121,13 +125,13 @@ public class TravelSchedulerApp {
         PreferencesPresenter preferencesPresenter = new PreferencesPresenter(preferencesVM);
 
         GetPreferencesInputBoundary getPrefsInteractor =
-                new GetPreferencesInteractor(preferenceGateway, preferencesPresenter);
+                new GetPreferencesInteractor(preferenceDataAccessInterface, preferencesPresenter);
         UpdatePreferencesInputBoundary updatePrefsInteractor =
-                new UpdatePreferencesInteractor(preferenceGateway, preferencesPresenter);
+                new UpdatePreferencesInteractor(preferenceDataAccessInterface, preferencesPresenter);
         AddFavoriteInputBoundary addFavoriteInteractor =
-                new AddFavoriteInteractor(preferenceGateway, geocodingGateway, preferencesPresenter);
+                new AddFavoriteInteractor(preferenceDataAccessInterface, geocodingDataAccessInterface, preferencesPresenter);
         DeleteFavoriteInputBoundary deleteFavoriteInteractor =
-                new DeleteFavoriteInteractor(preferenceGateway, preferencesPresenter);
+                new DeleteFavoriteInteractor(preferenceDataAccessInterface, preferencesPresenter);
 
         PreferencesController preferencesController = new PreferencesController(
                 getPrefsInteractor,
@@ -142,18 +146,18 @@ public class TravelSchedulerApp {
 
         SearchPlacesInputBoundary searchPlacesInteractor =
                 new SearchPlacesInteractor(
-                        preferenceGateway,
-                        geocodingGateway,
-                        placesGateway,
-                        weatherGateway,
+                        preferenceDataAccessInterface,
+                        geocodingDataAccessInterface,
+                        placesDataAccessInterface,
+                        weatherDataAccessInterface,
                         planCreationPresenter
                 );
 
         BuildPlanInputBoundary buildPlanInteractor =
-                new BuildPlanInteractor(preferenceGateway, geocodingGateway, planCreationPresenter);
+                new BuildPlanInteractor(preferenceDataAccessInterface, geocodingDataAccessInterface, planCreationPresenter);
 
         SavePlanInputBoundary savePlanInteractor =
-                new SavePlanInteractor(planGateway, planCreationPresenter);
+                new SavePlanInteractor(planDataAccessInterface, planCreationPresenter);
 
         PlanCreationController planCreationController = new PlanCreationController(
                 searchPlacesInteractor,
@@ -206,7 +210,7 @@ public class TravelSchedulerApp {
         WeatherAdvicePresenter weatherAdvicePresenter = new WeatherAdvicePresenter(weatherAdviceVM);
 
         WeatherAdviceInputBoundary weatherAdviceInteractor =
-                new WeatherAdviceInteractor(geocodingGateway, weatherGateway, weatherAdvicePresenter);
+                new WeatherAdviceInteractor(geocodingDataAccessInterface, weatherDataAccessInterface, weatherAdvicePresenter);
         WeatherAdviceController weatherAdviceController =
                 new WeatherAdviceController(weatherAdviceInteractor, weatherAdviceVM);
 

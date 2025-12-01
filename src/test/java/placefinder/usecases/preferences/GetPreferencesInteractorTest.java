@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import placefinder.entities.FavoriteLocation;
 import placefinder.entities.PreferenceProfile;
-import placefinder.usecases.ports.PreferenceGateway;
+import placefinder.usecases.dataacessinterfaces.PreferenceDataAccessInterface;
 
 import java.util.HashMap;
 import java.util.List;
@@ -36,7 +36,7 @@ class GetPreferencesInteractorTest {
     // -------------------------------------------------------------------------
 
     /** Persistence port used by the interactor (mock). */
-    private PreferenceGateway preferenceGateway;
+    private PreferenceDataAccessInterface preferenceDataAccessInterface;
 
     /** Presenter / output boundary used by the interactor (mock). */
     private GetPreferencesOutputBoundary presenter;
@@ -50,9 +50,9 @@ class GetPreferencesInteractorTest {
 
     @BeforeEach
     void setUp() {
-        preferenceGateway = mock(PreferenceGateway.class);
+        preferenceDataAccessInterface = mock(PreferenceDataAccessInterface.class);
         presenter         = mock(GetPreferencesOutputBoundary.class);
-        interactor        = new GetPreferencesInteractor(preferenceGateway, presenter);
+        interactor        = new GetPreferencesInteractor(preferenceDataAccessInterface, presenter);
     }
 
     // -------------------------------------------------------------------------
@@ -102,13 +102,13 @@ class GetPreferencesInteractorTest {
         FavoriteLocation fav2 = new FavoriteLocation(2, userId, "Location 2", "456 Oak Ave", 45.5017, -73.5673);
         List<FavoriteLocation> favorites = List.of(fav1, fav2);
 
-        when(preferenceGateway.loadForUser(userId)).thenReturn(profile);
-        when(preferenceGateway.listFavorites(userId)).thenReturn(favorites);
+        when(preferenceDataAccessInterface.loadForUser(userId)).thenReturn(profile);
+        when(preferenceDataAccessInterface.listFavorites(userId)).thenReturn(favorites);
 
         interactor.execute(input);
 
-        verify(preferenceGateway).loadForUser(userId);
-        verify(preferenceGateway).listFavorites(userId);
+        verify(preferenceDataAccessInterface).loadForUser(userId);
+        verify(preferenceDataAccessInterface).listFavorites(userId);
 
         GetPreferencesOutputData out = capturePresenterOutput();
         assertNull(out.getErrorMessage());
@@ -129,13 +129,13 @@ class GetPreferencesInteractorTest {
         PreferenceProfile profile = new PreferenceProfile(userId, radiusKm);
         List<FavoriteLocation> emptyFavorites = List.of();
 
-        when(preferenceGateway.loadForUser(userId)).thenReturn(profile);
-        when(preferenceGateway.listFavorites(userId)).thenReturn(emptyFavorites);
+        when(preferenceDataAccessInterface.loadForUser(userId)).thenReturn(profile);
+        when(preferenceDataAccessInterface.listFavorites(userId)).thenReturn(emptyFavorites);
 
         interactor.execute(input);
 
-        verify(preferenceGateway).loadForUser(userId);
-        verify(preferenceGateway).listFavorites(userId);
+        verify(preferenceDataAccessInterface).loadForUser(userId);
+        verify(preferenceDataAccessInterface).listFavorites(userId);
 
         GetPreferencesOutputData out = capturePresenterOutput();
         assertNull(out.getErrorMessage());
@@ -154,13 +154,13 @@ class GetPreferencesInteractorTest {
         int userId = 3;
         GetPreferencesInputData input = new GetPreferencesInputData(userId);
 
-        when(preferenceGateway.loadForUser(userId))
+        when(preferenceDataAccessInterface.loadForUser(userId))
                 .thenThrow(new Exception("Database connection failed"));
 
         interactor.execute(input);
 
-        verify(preferenceGateway).loadForUser(userId);
-        verify(preferenceGateway, never()).listFavorites(anyInt());
+        verify(preferenceDataAccessInterface).loadForUser(userId);
+        verify(preferenceDataAccessInterface, never()).listFavorites(anyInt());
 
         GetPreferencesOutputData out = capturePresenterOutput();
         assertNotNull(out.getErrorMessage());
@@ -180,14 +180,14 @@ class GetPreferencesInteractorTest {
 
         PreferenceProfile profile = new PreferenceProfile(userId, 1.5);
         
-        when(preferenceGateway.loadForUser(userId)).thenReturn(profile);
-        when(preferenceGateway.listFavorites(userId))
+        when(preferenceDataAccessInterface.loadForUser(userId)).thenReturn(profile);
+        when(preferenceDataAccessInterface.listFavorites(userId))
                 .thenThrow(new Exception("Failed to load favorites"));
 
         interactor.execute(input);
 
-        verify(preferenceGateway).loadForUser(userId);
-        verify(preferenceGateway).listFavorites(userId);
+        verify(preferenceDataAccessInterface).loadForUser(userId);
+        verify(preferenceDataAccessInterface).listFavorites(userId);
 
         GetPreferencesOutputData out = capturePresenterOutput();
         assertNotNull(out.getErrorMessage());
@@ -206,7 +206,7 @@ class GetPreferencesInteractorTest {
         GetPreferencesInputData input = new GetPreferencesInputData(userId);
 
         Exception ex = new Exception((String) null);
-        when(preferenceGateway.loadForUser(userId)).thenThrow(ex);
+        when(preferenceDataAccessInterface.loadForUser(userId)).thenThrow(ex);
 
         interactor.execute(input);
 

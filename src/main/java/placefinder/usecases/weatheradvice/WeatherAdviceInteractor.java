@@ -2,29 +2,29 @@ package placefinder.usecases.weatheradvice;
 
 import placefinder.entities.GeocodeResult;
 import placefinder.entities.WeatherSummary;
-import placefinder.usecases.ports.GeocodingGateway;
-import placefinder.usecases.ports.WeatherGateway;
+import placefinder.usecases.dataacessinterfaces.GeocodingDataAccessInterface;
+import placefinder.usecases.dataacessinterfaces.WeatherDataAccessInterface;
 
 import java.time.LocalDate;
 
 public class WeatherAdviceInteractor implements WeatherAdviceInputBoundary {
 
-    private final GeocodingGateway geocodingGateway;
-    private final WeatherGateway weatherGateway;
+    private final GeocodingDataAccessInterface geocodingDataAccessInterface;
+    private final WeatherDataAccessInterface weatherDataAccessInterface;
     private final WeatherAdviceOutputBoundary presenter;
 
-    public WeatherAdviceInteractor(GeocodingGateway geocodingGateway,
-                                   WeatherGateway weatherGateway,
+    public WeatherAdviceInteractor(GeocodingDataAccessInterface geocodingDataAccessInterface,
+                                   WeatherDataAccessInterface weatherDataAccessInterface,
                                    WeatherAdviceOutputBoundary presenter) {
-        this.geocodingGateway = geocodingGateway;
-        this.weatherGateway = weatherGateway;
+        this.geocodingDataAccessInterface = geocodingDataAccessInterface;
+        this.weatherDataAccessInterface = weatherDataAccessInterface;
         this.presenter = presenter;
     }
 
     @Override
     public void execute(WeatherAdviceInputData inputData) {
         try {
-            GeocodeResult geo = geocodingGateway.geocode(inputData.getLocationText());
+            GeocodeResult geo = geocodingDataAccessInterface.geocode(inputData.getLocationText());
             if (geo == null) {
                 presenter.present(new WeatherAdviceOutputData(null, null, "Could not find that location."));
                 return;
@@ -34,7 +34,7 @@ public class WeatherAdviceInteractor implements WeatherAdviceInputBoundary {
                     ? LocalDate.now()
                     : LocalDate.parse(inputData.getDate());
 
-            WeatherSummary weather = weatherGateway.getDailyWeather(geo.getLat(), geo.getLon(), date);
+            WeatherSummary weather = weatherDataAccessInterface.getDailyWeather(geo.getLat(), geo.getLon(), date);
             if (weather == null) {
                 presenter.present(new WeatherAdviceOutputData(null, null,
                         "Unable to retrieve weather data at the moment."));

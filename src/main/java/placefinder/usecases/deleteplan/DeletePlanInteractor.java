@@ -1,6 +1,6 @@
 package placefinder.usecases.deleteplan;
 
-import placefinder.usecases.ports.PlanGateway;
+import placefinder.usecases.dataacessinterfaces.PlanDataAccessInterface;
 
 /**
  * Interactor responsible for deleting an existing plan.
@@ -11,7 +11,7 @@ import placefinder.usecases.ports.PlanGateway;
 public class DeletePlanInteractor implements DeletePlanInputBoundary {
 
     /** Gateway interface for deleting plans in the data layer */
-    private final PlanGateway planGateway;
+    private final PlanDataAccessInterface planDataAccessInterface;
 
     /** Output boundary responsible for formatting result data for presentation */
     private final DeletePlanOutputBoundary presenter;
@@ -19,12 +19,12 @@ public class DeletePlanInteractor implements DeletePlanInputBoundary {
     /**
      * Constructs a DeletePlanInteractor with the required data gateway and output presenter.
      *
-     * @param planGateway  abstraction for deleting plans from storage
+     * @param planDataAccessInterface  abstraction for deleting plans from storage
      * @param presenter    presenter that receives the result of the operation
      */
-    public DeletePlanInteractor(PlanGateway planGateway,
+    public DeletePlanInteractor(PlanDataAccessInterface planDataAccessInterface,
                                 DeletePlanOutputBoundary presenter) {
-        this.planGateway = planGateway;
+        this.planDataAccessInterface = planDataAccessInterface;
         this.presenter = presenter;
     }
 
@@ -41,7 +41,7 @@ public class DeletePlanInteractor implements DeletePlanInputBoundary {
     @Override
     public void execute(DeletePlanInputData inputData) {
         try {
-            planGateway.deletePlan(inputData.getPlanId(), inputData.getUserId());
+            planDataAccessInterface.deletePlan(inputData.getPlanId(), inputData.getUserId());
             presenter.present(new DeletePlanOutputData(true, "Plan deleted."));
         } catch (Exception e) {
             presenter.present(new DeletePlanOutputData(false, e.getMessage()));

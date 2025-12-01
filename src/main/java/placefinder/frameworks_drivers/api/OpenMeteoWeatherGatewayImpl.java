@@ -4,11 +4,11 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import placefinder.entities.WeatherSummary;
-import placefinder.usecases.ports.WeatherGateway;
+import placefinder.usecases.dataacessinterfaces.WeatherDataAccessInterface;
 
 import java.time.LocalDate;
 
-public class OpenMeteoWeatherGatewayImpl implements WeatherGateway {
+public class OpenMeteoWeatherGatewayImpl implements WeatherDataAccessInterface {
 
     @Override
     public WeatherSummary getDailyWeather(double lat, double lon, LocalDate date) throws Exception {

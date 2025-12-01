@@ -1,9 +1,10 @@
-package placefinder.frameworks_drivers.database;
+package placefinder.frameworks_drivers.dataaccess;
 
 import placefinder.entities.DayTripExperienceCategories;
 import placefinder.entities.FavoriteLocation;
 import placefinder.entities.PreferenceProfile;
-import placefinder.usecases.ports.PreferenceGateway;
+import placefinder.frameworks_drivers.database.Database;
+import placefinder.usecases.dataacessinterfaces.PreferenceDataAccessInterface;
 
 import java.sql.*;
 import java.util.*;
@@ -12,7 +13,7 @@ import java.util.stream.Collectors;
 /**
  * SQLite implementation of PreferenceGateway for storing and retrieving user preferences.
  */
-public class SqlitePreferenceGatewayImpl implements PreferenceGateway {
+public class SqlitePreferenceDataAccess implements PreferenceDataAccessInterface {
 
     @Override
     public PreferenceProfile loadForUser(int userId) throws Exception {

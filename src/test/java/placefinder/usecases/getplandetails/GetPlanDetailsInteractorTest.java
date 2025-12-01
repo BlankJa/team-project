@@ -4,7 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import placefinder.entities.Plan;
-import placefinder.usecases.ports.PlanGateway;
+import placefinder.usecases.dataacessinterfaces.PlanDataAccessInterface;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -18,7 +18,7 @@ import static org.mockito.Mockito.*;
  *
  * <p>The tests treat the interactor as a pure application-layer service:
  * <ul>
- *     <li>The persistence interface {@link PlanGateway} is mocked.</li>
+ *     <li>The persistence interface {@link PlanDataAccessInterface} is mocked.</li>
  *     <li>The output boundary {@link GetPlanDetailsOutputBoundary} is mocked.</li>
  *     <li>The domain entity {@link Plan} is created as a real object,
  *         avoiding any ByteBuddy / mocking issues with Java 25.</li>
@@ -31,7 +31,7 @@ class GetPlanDetailsInteractorTest {
     // -------------------------------------------------------------------------
 
     /** Gateway abstraction used to load plans (mock). */
-    private PlanGateway planGateway;
+    private PlanDataAccessInterface planDataAccessInterface;
 
     /** Presenter used to forward output data to the UI layer (mock). */
     private GetPlanDetailsOutputBoundary presenter;
@@ -49,9 +49,9 @@ class GetPlanDetailsInteractorTest {
      */
     @BeforeEach
     void setUp() {
-        planGateway = mock(PlanGateway.class);
+        planDataAccessInterface = mock(PlanDataAccessInterface.class);
         presenter   = mock(GetPlanDetailsOutputBoundary.class);
-        interactor  = new GetPlanDetailsInteractor(planGateway, presenter);
+        interactor  = new GetPlanDetailsInteractor(planDataAccessInterface, presenter);
     }
 
     // -------------------------------------------------------------------------
@@ -97,7 +97,7 @@ class GetPlanDetailsInteractorTest {
      *
      * <p>When the gateway returns a non-null {@link Plan}, the interactor should:
      * <ul>
-     *     <li>Call {@link PlanGateway#findPlanWithStops(int)} with the plan ID
+     *     <li>Call {@link PlanDataAccessInterface#findPlanWithStops(int)} with the plan ID
      *         provided in {@link GetPlanDetailsInputData}.</li>
      *     <li>Forward a {@link GetPlanDetailsOutputData} instance to the presenter
      *         where {@code getPlan()} is that plan and {@code getErrorMessage()}
@@ -111,13 +111,13 @@ class GetPlanDetailsInteractorTest {
         GetPlanDetailsInputData input = new GetPlanDetailsInputData(planId);
         Plan plan = createSamplePlan(planId);
 
-        when(planGateway.findPlanWithStops(planId)).thenReturn(plan);
+        when(planDataAccessInterface.findPlanWithStops(planId)).thenReturn(plan);
 
         // Act
         interactor.execute(input);
 
         // Assert – gateway called exactly once with the same planId
-        verify(planGateway, times(1)).findPlanWithStops(planId);
+        verify(planDataAccessInterface, times(1)).findPlanWithStops(planId);
 
         // And presenter receives a successful output (plan set, no error)
         GetPlanDetailsOutputData out = capturePresenterOutput();
@@ -140,13 +140,13 @@ class GetPlanDetailsInteractorTest {
         GetPlanDetailsInputData input = new GetPlanDetailsInputData(planId);
         Plan plan = createSamplePlan(planId);
 
-        when(planGateway.findPlanWithStops(planId)).thenReturn(plan);
+        when(planDataAccessInterface.findPlanWithStops(planId)).thenReturn(plan);
 
         // Act
         interactor.execute(input);
 
         // Assert – gateway is called with the exact same id
-        verify(planGateway).findPlanWithStops(planId);
+        verify(planDataAccessInterface).findPlanWithStops(planId);
 
         GetPlanDetailsOutputData out = capturePresenterOutput();
         assertSame(plan, out.getPlan());
@@ -175,13 +175,13 @@ class GetPlanDetailsInteractorTest {
         int planId = 123;
         GetPlanDetailsInputData input = new GetPlanDetailsInputData(planId);
 
-        when(planGateway.findPlanWithStops(planId)).thenReturn(null);
+        when(planDataAccessInterface.findPlanWithStops(planId)).thenReturn(null);
 
         // Act
         interactor.execute(input);
 
         // Assert – gateway still invoked
-        verify(planGateway).findPlanWithStops(planId);
+        verify(planDataAccessInterface).findPlanWithStops(planId);
 
         // Presenter should receive a null plan and a user-friendly error
         GetPlanDetailsOutputData out = capturePresenterOutput();
@@ -196,7 +196,7 @@ class GetPlanDetailsInteractorTest {
     /**
      * Error-path scenario:
      *
-     * <p>If {@link PlanGateway#findPlanWithStops(int)} throws an exception, the
+     * <p>If {@link PlanDataAccessInterface#findPlanWithStops(int)} throws an exception, the
      * interactor should:
      * <ul>
      *     <li>Catch the exception (not allow it to propagate).</li>
@@ -214,13 +214,13 @@ class GetPlanDetailsInteractorTest {
         GetPlanDetailsInputData input = new GetPlanDetailsInputData(planId);
 
         doThrow(new Exception("Database is temporarily unavailable"))
-                .when(planGateway).findPlanWithStops(planId);
+                .when(planDataAccessInterface).findPlanWithStops(planId);
 
         // Act
         interactor.execute(input);
 
         // Assert – gateway was called even though it failed
-        verify(planGateway).findPlanWithStops(planId);
+        verify(planDataAccessInterface).findPlanWithStops(planId);
 
         // Presenter receives a failure-style output: no plan, error message set
         GetPlanDetailsOutputData out = capturePresenterOutput();
@@ -243,7 +243,7 @@ class GetPlanDetailsInteractorTest {
         GetPlanDetailsInputData input = new GetPlanDetailsInputData(planId);
 
         Exception ex = new Exception((String) null);
-        doThrow(ex).when(planGateway).findPlanWithStops(planId);
+        doThrow(ex).when(planDataAccessInterface).findPlanWithStops(planId);
 
         // Act
         interactor.execute(input);

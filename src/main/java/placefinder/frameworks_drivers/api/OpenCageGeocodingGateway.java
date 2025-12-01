@@ -4,12 +4,12 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import placefinder.entities.GeocodeResult;
-import placefinder.usecases.ports.GeocodingGateway;
+import placefinder.usecases.dataacessinterfaces.GeocodingDataAccessInterface;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
-public class OpenCageGeocodingGateway implements GeocodingGateway {
+public class OpenCageGeocodingGateway implements GeocodingDataAccessInterface {
 
     private final String apiKey;
 

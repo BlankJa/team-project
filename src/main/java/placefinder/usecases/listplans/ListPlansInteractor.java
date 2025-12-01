@@ -1,7 +1,7 @@
 package placefinder.usecases.listplans;
 
 import placefinder.entities.Plan;
-import placefinder.usecases.ports.PlanGateway;
+import placefinder.usecases.dataacessinterfaces.PlanDataAccessInterface;
 import java.util.List;
 
 /**
@@ -15,7 +15,7 @@ import java.util.List;
 public class ListPlansInteractor implements ListPlansInputBoundary {
 
     /** Provides access to stored plans (database or external source) */
-    private final PlanGateway planGateway;
+    private final PlanDataAccessInterface planDataAccessInterface;
 
     /** Output boundary that receives the formatted result */
     private final ListPlansOutputBoundary presenter;
@@ -23,12 +23,12 @@ public class ListPlansInteractor implements ListPlansInputBoundary {
     /**
      * Constructs a ListPlansInteractor with dependency-injected gateway and presenter.
      *
-     * @param planGateway  abstraction for retrieving plans belonging to a user
+     * @param planDataAccessInterface  abstraction for retrieving plans belonging to a user
      * @param presenter    handles output formatting for the view layer
      */
-    public ListPlansInteractor(PlanGateway planGateway,
+    public ListPlansInteractor(PlanDataAccessInterface planDataAccessInterface,
                                ListPlansOutputBoundary presenter) {
-        this.planGateway = planGateway;
+        this.planDataAccessInterface = planDataAccessInterface;
         this.presenter = presenter;
     }
 
@@ -45,7 +45,7 @@ public class ListPlansInteractor implements ListPlansInputBoundary {
     @Override
     public void execute(ListPlansInputData inputData) {
         try {
-            List<Plan> plans = planGateway.findPlansByUser(inputData.getUserId());
+            List<Plan> plans = planDataAccessInterface.findPlansByUser(inputData.getUserId());
             presenter.present(new ListPlansOutputData(plans, null));
         } catch (Exception e) {
             presenter.present(new ListPlansOutputData(List.of(), e.getMessage()));

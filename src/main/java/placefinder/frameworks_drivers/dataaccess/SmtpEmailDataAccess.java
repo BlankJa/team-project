@@ -1,18 +1,18 @@
-package placefinder.frameworks_drivers.database;
+package placefinder.frameworks_drivers.dataaccess;
 
-import placefinder.usecases.ports.EmailGateway;
+import placefinder.usecases.dataacessinterfaces.EmailDataAccessInterface;
 
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import java.util.Properties;
 
-public class SmtpEmailGateway implements EmailGateway {
+public class SmtpEmailDataAccess implements EmailDataAccessInterface {
 
     private final String username;
     private final String password;
 
-    public SmtpEmailGateway(String username, String password) {
+    public SmtpEmailDataAccess(String username, String password) {
         this.username = username;
         this.password = password;
     }

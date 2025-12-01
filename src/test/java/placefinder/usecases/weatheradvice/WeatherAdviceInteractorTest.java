@@ -3,8 +3,8 @@ package placefinder.usecases.weatheradvice;
 import org.junit.jupiter.api.Test;
 import placefinder.entities.GeocodeResult;
 import placefinder.entities.WeatherSummary;
-import placefinder.usecases.ports.GeocodingGateway;
-import placefinder.usecases.ports.WeatherGateway;
+import placefinder.usecases.dataacessinterfaces.GeocodingDataAccessInterface;
+import placefinder.usecases.dataacessinterfaces.WeatherDataAccessInterface;
 
 import java.time.LocalDate;
 
@@ -40,15 +40,15 @@ class WeatherAdviceInteractorTest {
     @Test
     void geocodingFails_returnsError() throws Exception {
         // Arrange
-        GeocodingGateway geocodingGateway = mock(GeocodingGateway.class);
-        WeatherGateway weatherGateway = mock(WeatherGateway.class);
+        GeocodingDataAccessInterface geocodingDataAccessInterface = mock(GeocodingDataAccessInterface.class);
+        WeatherDataAccessInterface weatherDataAccessInterface = mock(WeatherDataAccessInterface.class);
 
         // location not found
-        when(geocodingGateway.geocode("NowhereLand")).thenReturn(null);
+        when(geocodingDataAccessInterface.geocode("NowhereLand")).thenReturn(null);
 
         CapturingPresenter presenter = new CapturingPresenter();
         WeatherAdviceInteractor interactor =
-                new WeatherAdviceInteractor(geocodingGateway, weatherGateway, presenter);
+                new WeatherAdviceInteractor(geocodingDataAccessInterface, weatherDataAccessInterface, presenter);
 
         WeatherAdviceInputData input =
                 new WeatherAdviceInputData("NowhereLand", "2025-11-19");
@@ -67,24 +67,24 @@ class WeatherAdviceInteractorTest {
     @Test
     void weatherNull_returnsWeatherUnavailableError() throws Exception {
         // Arrange
-        GeocodingGateway geocodingGateway = mock(GeocodingGateway.class);
-        WeatherGateway weatherGateway = mock(WeatherGateway.class);
+        GeocodingDataAccessInterface geocodingDataAccessInterface = mock(GeocodingDataAccessInterface.class);
+        WeatherDataAccessInterface weatherDataAccessInterface = mock(WeatherDataAccessInterface.class);
 
         GeocodeResult geo = mock(GeocodeResult.class);
         when(geo.getLat()).thenReturn(43.65);
         when(geo.getLon()).thenReturn(-79.38);
         when(geo.getFormattedAddress()).thenReturn("Toronto, ON");
 
-        when(geocodingGateway.geocode("Toronto")).thenReturn(geo);
+        when(geocodingDataAccessInterface.geocode("Toronto")).thenReturn(geo);
 
         // Weather gateway returns null
-        when(weatherGateway.getDailyWeather(
+        when(weatherDataAccessInterface.getDailyWeather(
                 anyDouble(), anyDouble(), any(LocalDate.class))
         ).thenReturn(null);
 
         CapturingPresenter presenter = new CapturingPresenter();
         WeatherAdviceInteractor interactor =
-                new WeatherAdviceInteractor(geocodingGateway, weatherGateway, presenter);
+                new WeatherAdviceInteractor(geocodingDataAccessInterface, weatherDataAccessInterface, presenter);
 
         WeatherAdviceInputData input =
                 new WeatherAdviceInputData("Toronto", "2025-11-19");
@@ -103,15 +103,15 @@ class WeatherAdviceInteractorTest {
     @Test
     void coldWetLowUv_generatesWarmClothesAndRainAdvice() throws Exception {
         // Arrange
-        GeocodingGateway geocodingGateway = mock(GeocodingGateway.class);
-        WeatherGateway weatherGateway = mock(WeatherGateway.class);
+        GeocodingDataAccessInterface geocodingDataAccessInterface = mock(GeocodingDataAccessInterface.class);
+        WeatherDataAccessInterface weatherDataAccessInterface = mock(WeatherDataAccessInterface.class);
 
         GeocodeResult geo = mock(GeocodeResult.class);
         when(geo.getLat()).thenReturn(43.65);
         when(geo.getLon()).thenReturn(-79.38);
         when(geo.getFormattedAddress()).thenReturn("Toronto, ON");
 
-        when(geocodingGateway.geocode("Toronto")).thenReturn(geo);
+        when(geocodingDataAccessInterface.geocode("Toronto")).thenReturn(geo);
 
         WeatherSummary weather = mock(WeatherSummary.class);
         when(weather.getTemperatureC()).thenReturn(2.0);      // cold branch
@@ -119,13 +119,13 @@ class WeatherAdviceInteractorTest {
         when(weather.getConditions()).thenReturn("Snow");
         when(weather.isPrecipitationLikely()).thenReturn(true); // rain/snow branch
 
-        when(weatherGateway.getDailyWeather(
+        when(weatherDataAccessInterface.getDailyWeather(
                 43.65, -79.38, LocalDate.parse("2025-11-19"))
         ).thenReturn(weather);
 
         CapturingPresenter presenter = new CapturingPresenter();
         WeatherAdviceInteractor interactor =
-                new WeatherAdviceInteractor(geocodingGateway, weatherGateway, presenter);
+                new WeatherAdviceInteractor(geocodingDataAccessInterface, weatherDataAccessInterface, presenter);
 
         WeatherAdviceInputData input =
                 new WeatherAdviceInputData("Toronto", "2025-11-19");
@@ -174,14 +174,14 @@ class WeatherAdviceInteractorTest {
     @Test
     void hotHighUvNoPrecip_generatesLightClothesAndHighUvAdvice() throws Exception {
         // Arrange
-        GeocodingGateway geocodingGateway = mock(GeocodingGateway.class);
-        WeatherGateway weatherGateway = mock(WeatherGateway.class);
+        GeocodingDataAccessInterface geocodingDataAccessInterface = mock(GeocodingDataAccessInterface.class);
+        WeatherDataAccessInterface weatherDataAccessInterface = mock(WeatherDataAccessInterface.class);
 
         GeocodeResult geo = mock(GeocodeResult.class);
         when(geo.getLat()).thenReturn(43.65);
         when(geo.getLon()).thenReturn(-79.38);
         when(geo.getFormattedAddress()).thenReturn("Toronto, ON");
-        when(geocodingGateway.geocode("Toronto")).thenReturn(geo);
+        when(geocodingDataAccessInterface.geocode("Toronto")).thenReturn(geo);
 
         WeatherSummary weather = mock(WeatherSummary.class);
         when(weather.getTemperatureC()).thenReturn(30.0);     // warm/hot branch
@@ -189,13 +189,13 @@ class WeatherAdviceInteractorTest {
         when(weather.getConditions()).thenReturn("Sunny");
         when(weather.isPrecipitationLikely()).thenReturn(false);
 
-        when(weatherGateway.getDailyWeather(
+        when(weatherDataAccessInterface.getDailyWeather(
                 43.65, -79.38, LocalDate.parse("2025-11-19"))
         ).thenReturn(weather);
 
         CapturingPresenter presenter = new CapturingPresenter();
         WeatherAdviceInteractor interactor =
-                new WeatherAdviceInteractor(geocodingGateway, weatherGateway, presenter);
+                new WeatherAdviceInteractor(geocodingDataAccessInterface, weatherDataAccessInterface, presenter);
 
         WeatherAdviceInputData input =
                 new WeatherAdviceInputData("Toronto", "2025-11-19");
@@ -241,14 +241,14 @@ class WeatherAdviceInteractorTest {
     @Test
     void nullOrBlankDate_usesTodayButStillProducesAdvice() throws Exception {
         // Arrange
-        GeocodingGateway geocodingGateway = mock(GeocodingGateway.class);
-        WeatherGateway weatherGateway = mock(WeatherGateway.class);
+        GeocodingDataAccessInterface geocodingDataAccessInterface = mock(GeocodingDataAccessInterface.class);
+        WeatherDataAccessInterface weatherDataAccessInterface = mock(WeatherDataAccessInterface.class);
 
         GeocodeResult geo = mock(GeocodeResult.class);
         when(geo.getLat()).thenReturn(43.65);
         when(geo.getLon()).thenReturn(-79.38);
         when(geo.getFormattedAddress()).thenReturn("Toronto, ON");
-        when(geocodingGateway.geocode("Toronto")).thenReturn(geo);
+        when(geocodingDataAccessInterface.geocode("Toronto")).thenReturn(geo);
 
         WeatherSummary weather = mock(WeatherSummary.class);
         when(weather.getTemperatureC()).thenReturn(20.0);
@@ -256,13 +256,13 @@ class WeatherAdviceInteractorTest {
         when(weather.getConditions()).thenReturn("Cloudy");
         when(weather.isPrecipitationLikely()).thenReturn(false);
 
-        when(weatherGateway.getDailyWeather(
+        when(weatherDataAccessInterface.getDailyWeather(
                 eq(43.65), eq(-79.38), any(LocalDate.class))
         ).thenReturn(weather);
 
         CapturingPresenter presenter = new CapturingPresenter();
         WeatherAdviceInteractor interactor =
-                new WeatherAdviceInteractor(geocodingGateway, weatherGateway, presenter);
+                new WeatherAdviceInteractor(geocodingDataAccessInterface, weatherDataAccessInterface, presenter);
 
         // Using null date → should default to today
         WeatherAdviceInputData input =
@@ -298,15 +298,15 @@ class WeatherAdviceInteractorTest {
     @Test
     void exceptionThrown_resultsInErrorMessage() throws Exception {
         // Arrange
-        GeocodingGateway geocodingGateway = mock(GeocodingGateway.class);
-        WeatherGateway weatherGateway = mock(WeatherGateway.class);
+        GeocodingDataAccessInterface geocodingDataAccessInterface = mock(GeocodingDataAccessInterface.class);
+        WeatherDataAccessInterface weatherDataAccessInterface = mock(WeatherDataAccessInterface.class);
 
-        when(geocodingGateway.geocode("Toronto"))
+        when(geocodingDataAccessInterface.geocode("Toronto"))
                 .thenThrow(new RuntimeException("Geocoding service not reachable"));
 
         CapturingPresenter presenter = new CapturingPresenter();
         WeatherAdviceInteractor interactor =
-                new WeatherAdviceInteractor(geocodingGateway, weatherGateway, presenter);
+                new WeatherAdviceInteractor(geocodingDataAccessInterface, weatherDataAccessInterface, presenter);
 
         WeatherAdviceInputData input =
                 new WeatherAdviceInputData("Toronto", "2025-11-19");

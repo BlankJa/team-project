@@ -2,8 +2,8 @@ package placefinder.usecases.register;
 
 import placefinder.entities.PasswordUtil;
 import placefinder.entities.User;
-import placefinder.usecases.ports.UserGateway;
-import placefinder.usecases.ports.EmailGateway;
+import placefinder.usecases.dataacessinterfaces.UserDataAccessInterface;
+import placefinder.usecases.dataacessinterfaces.EmailDataAccessInterface;
 
 import java.security.SecureRandom;
 
@@ -14,17 +14,17 @@ import java.security.SecureRandom;
  */
 public class RegisterInteractor implements RegisterInputBoundary {
 
-    private final UserGateway userGateway;
+    private final UserDataAccessInterface userDataAccessInterface;
     private final RegisterOutputBoundary presenter;
-    private final EmailGateway emailGateway;
+    private final EmailDataAccessInterface emailDataAccessInterface;
     private final SecureRandom random = new SecureRandom();
 
-    public RegisterInteractor(UserGateway userGateway,
+    public RegisterInteractor(UserDataAccessInterface userDataAccessInterface,
                               RegisterOutputBoundary presenter,
-                              EmailGateway emailGateway) {
-        this.userGateway = userGateway;
+                              EmailDataAccessInterface emailDataAccessInterface) {
+        this.userDataAccessInterface = userDataAccessInterface;
         this.presenter = presenter;
-        this.emailGateway = emailGateway;
+        this.emailDataAccessInterface = emailDataAccessInterface;
     }
 
     @Override
@@ -61,7 +61,7 @@ public class RegisterInteractor implements RegisterInputBoundary {
             }
 
             // ===== Existing user check =====
-            User existing = userGateway.findByEmail(email);
+            User existing = userDataAccessInterface.findByEmail(email);
             if (existing != null) {
                 if (existing.isVerified()) {
                     // Already registered & verified -> hard stop
@@ -70,8 +70,8 @@ public class RegisterInteractor implements RegisterInputBoundary {
                     // Registered but NOT verified -> resend a fresh code
                     String newCode = generateVerificationCode();
                     existing.setVerificationCode(newCode);
-                    userGateway.save(existing);
-                    emailGateway.sendVerificationEmail(email, newCode);
+                    userDataAccessInterface.save(existing);
+                    emailDataAccessInterface.sendVerificationEmail(email, newCode);
 
                     presenter.present(new RegisterOutputData(
                             false,
@@ -99,10 +99,10 @@ public class RegisterInteractor implements RegisterInputBoundary {
             user.setVerified(false);
             user.setVerificationCode(verificationCode);
 
-            userGateway.save(user);
+            userDataAccessInterface.save(user);
 
             // Send verification email
-            emailGateway.sendVerificationEmail(email, verificationCode);
+            emailDataAccessInterface.sendVerificationEmail(email, verificationCode);
 
             presenter.present(new RegisterOutputData(
                     true,

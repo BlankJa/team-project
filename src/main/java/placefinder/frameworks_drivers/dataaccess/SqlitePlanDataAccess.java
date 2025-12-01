@@ -1,7 +1,8 @@
-package placefinder.frameworks_drivers.database;
+package placefinder.frameworks_drivers.dataaccess;
 
 import placefinder.entities.*;
-import placefinder.usecases.ports.PlanGateway;
+import placefinder.frameworks_drivers.database.Database;
+import placefinder.usecases.dataacessinterfaces.PlanDataAccessInterface;
 
 import java.sql.*;
 import java.time.LocalDate;
@@ -12,7 +13,7 @@ import java.util.stream.Collectors;
 /**
  * SQLite implementation of PlanGateway for saving plans.
  */
-public class SqlitePlanGatewayImpl implements PlanGateway {
+public class SqlitePlanDataAccess implements PlanDataAccessInterface {
 
     @Override
     public void savePlan(Plan plan) throws Exception {

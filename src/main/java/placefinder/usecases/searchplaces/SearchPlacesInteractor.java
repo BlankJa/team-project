@@ -5,10 +5,10 @@ import placefinder.entities.PreferenceProfile;
 import placefinder.entities.WeatherSummary;
 import placefinder.entities.GeocodeResult;
 import placefinder.entities.IndoorOutdoorType;
-import placefinder.usecases.ports.GeocodingGateway;
-import placefinder.usecases.ports.PlacesGateway;
-import placefinder.usecases.ports.PreferenceGateway;
-import placefinder.usecases.ports.WeatherGateway;
+import placefinder.usecases.dataacessinterfaces.GeocodingDataAccessInterface;
+import placefinder.usecases.dataacessinterfaces.PlacesDataAccessInterface;
+import placefinder.usecases.dataacessinterfaces.PreferenceDataAccessInterface;
+import placefinder.usecases.dataacessinterfaces.WeatherDataAccessInterface;
 
 
 import java.time.LocalDate;
@@ -20,30 +20,30 @@ import java.util.stream.Collectors;
 
 public class SearchPlacesInteractor implements SearchPlacesInputBoundary {
 
-    private final PreferenceGateway preferenceGateway;
-    private final GeocodingGateway geocodingGateway;
-    private final PlacesGateway placesGateway;
-    private final WeatherGateway weatherGateway;
+    private final PreferenceDataAccessInterface preferenceDataAccessInterface;
+    private final GeocodingDataAccessInterface geocodingDataAccessInterface;
+    private final PlacesDataAccessInterface placesDataAccessInterface;
+    private final WeatherDataAccessInterface weatherDataAccessInterface;
     private final SearchPlacesOutputBoundary presenter;
 
-    public SearchPlacesInteractor(PreferenceGateway preferenceGateway,
-                                  GeocodingGateway geocodingGateway,
-                                  PlacesGateway placesGateway,
-                                  WeatherGateway weatherGateway,
+    public SearchPlacesInteractor(PreferenceDataAccessInterface preferenceDataAccessInterface,
+                                  GeocodingDataAccessInterface geocodingDataAccessInterface,
+                                  PlacesDataAccessInterface placesDataAccessInterface,
+                                  WeatherDataAccessInterface weatherDataAccessInterface,
                                   SearchPlacesOutputBoundary presenter) {
-        this.preferenceGateway = preferenceGateway;
-        this.geocodingGateway = geocodingGateway;
-        this.placesGateway = placesGateway;
-        this.weatherGateway = weatherGateway;
+        this.preferenceDataAccessInterface = preferenceDataAccessInterface;
+        this.geocodingDataAccessInterface = geocodingDataAccessInterface;
+        this.placesDataAccessInterface = placesDataAccessInterface;
+        this.weatherDataAccessInterface = weatherDataAccessInterface;
         this.presenter = presenter;
     }
 
     @Override
     public void execute(SearchPlacesInputData inputData) {
         try {
-            PreferenceProfile profile = preferenceGateway.loadForUser(inputData.getUserId());
+            PreferenceProfile profile = preferenceDataAccessInterface.loadForUser(inputData.getUserId());
 
-            GeocodeResult geo = geocodingGateway.geocode(inputData.getLocationText());
+            GeocodeResult geo = geocodingDataAccessInterface.geocode(inputData.getLocationText());
             if (geo == null) {
                 presenter.present(new SearchPlacesOutputData(
                         List.of(),
@@ -62,7 +62,7 @@ public class SearchPlacesInteractor implements SearchPlacesInputBoundary {
             String weatherAdvice = null;
 
             try {
-                weather = weatherGateway.getDailyWeather(geo.getLat(), geo.getLon(), date);
+                weather = weatherDataAccessInterface.getDailyWeather(geo.getLat(), geo.getLon(), date);
                 if (weather != null) {
                     weatherUsed = true;
                     weatherAdvice = buildWeatherAdvice(weather);
@@ -78,7 +78,7 @@ public class SearchPlacesInteractor implements SearchPlacesInputBoundary {
 
             // If user has no interests, just search general places
             if (selectedCategories == null || selectedCategories.isEmpty()) {
-                places.addAll(placesGateway.searchPlaces(
+                places.addAll(placesDataAccessInterface.searchPlaces(
                         geo.getLat(), geo.getLon(), profile.getRadiusKm(), null
                 ));
             } else {
@@ -86,7 +86,7 @@ public class SearchPlacesInteractor implements SearchPlacesInputBoundary {
                 for (Map.Entry<String, List<String>> entry : selectedCategories.entrySet()) {
                     Map<String, List<String>> singleInterestMap = Map.of(entry.getKey(), entry.getValue());
 
-                    List<Place> result = placesGateway.searchPlaces(
+                    List<Place> result = placesDataAccessInterface.searchPlaces(
                             geo.getLat(), geo.getLon(), profile.getRadiusKm(), singleInterestMap
                     );
 
