@@ -14,21 +14,28 @@
     </properties>
 
     <dependencies>
-        <!-- JUnit 5 -->
+
+        <!-- ========================  JUNIT + MOCKITO  ======================== -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
+            <artifactId>junit-jupiter-api</artifactId>
             <version>5.11.0</version>
-            <scope>test</scope>
         </dependency>
 
-        <!-- Mockito -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.11.0</version>
+        </dependency>
+
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <version>5.12.0</version>
-            <scope>test</scope>
         </dependency>
+
+
+        <!-- ========================  MAIN DEPENDENCIES  ======================== -->
 
         <!-- SQLite JDBC -->
         <dependency>
@@ -37,30 +44,28 @@
             <version>3.45.2.0</version>
         </dependency>
 
-        <!-- Timing Framework (animations) -->
+        <!-- Timing Framework for animations -->
         <dependency>
             <groupId>net.java.dev.timingframework</groupId>
             <artifactId>timingframework</artifactId>
             <version>1.0</version>
         </dependency>
 
-        <!-- MigLayout for flexible Swing layouts (if you want to use it) -->
+        <!-- MigLayout -->
         <dependency>
             <groupId>com.miglayout</groupId>
             <artifactId>miglayout-swing</artifactId>
             <version>11.4.2</version>
         </dependency>
 
-
-        <!-- JSON (Gson) for APIs -->
+        <!-- JSON parser -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.11.0</version>
         </dependency>
 
-        <!-- SLF4J API and Simple implementation (to avoid warnings) -->
-        <!-- Using 1.7.x version for better compatibility with existing dependencies -->
+        <!-- Logging -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -72,14 +77,14 @@
             <version>1.7.36</version>
         </dependency>
 
-        <!-- JavaMail (very compatible older artifact) -->
+        <!-- JavaMail -->
         <dependency>
             <groupId>javax.mail</groupId>
             <artifactId>mail</artifactId>
             <version>1.4.7</version>
         </dependency>
 
-        <!-- JavaFX for video playback -->
+        <!-- JavaFX -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
@@ -95,10 +100,13 @@
             <artifactId>javafx-swing</artifactId>
             <version>21.0.5</version>
         </dependency>
+
     </dependencies>
+
 
     <build>
         <plugins>
+            <!-- JAVA COMPILER -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -106,26 +114,33 @@
                 <configuration>
                     <source>${maven.compiler.source}</source>
                     <target>${maven.compiler.target}</target>
-                    <!-- or you can use <release>21</release> instead of source/target -->
                 </configuration>
             </plugin>
 
+            <!-- JUNIT TEST RUNNER -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+                <configuration>
+                    <useModulePath>false</useModulePath>
+                </configuration>
+            </plugin>
 
-            <!-- To run the app with `mvn exec:java` -->
+            <!-- RUN APPLICATION WITH MAVEN -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.1.0</version>
                 <configuration>
                     <mainClass>placefinder.TravelSchedulerApp</mainClass>
-                    <options>
-                        <option>--add-modules</option>
-                        <option>javafx.controls,javafx.media,javafx.swing</option>
-                        <option>--add-exports</option>
-                        <option>javafx.base/com.sun.javafx.runtime=ALL-UNNAMED</option>
-                    </options>
+                    <arguments>
+                        <argument>--add-modules=javafx.controls,javafx.media,javafx.swing</argument>
+                        <argument>--add-exports=javafx.base/com.sun.javafx.runtime=ALL-UNNAMED</argument>
+                    </arguments>
                 </configuration>
             </plugin>
         </plugins>
     </build>
+
 </project>
