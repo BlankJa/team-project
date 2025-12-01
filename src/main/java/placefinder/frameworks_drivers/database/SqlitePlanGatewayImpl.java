@@ -156,7 +156,7 @@ public class SqlitePlanGatewayImpl implements PlanGateway {
                 Map<String, List<String>> categories = parseCategories(categoriesStr);
 
                 List<PlanStop> stops = loadStopsForPlan(conn, id);
-                Route route = new Route(stops);
+                RouteOld route = new RouteOld(stops);
 
                 return new Plan(id, userId, rs.getString("name"),
                         date, start, originAddress, route, radius, categories);

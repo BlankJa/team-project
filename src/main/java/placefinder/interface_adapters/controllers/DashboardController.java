@@ -2,16 +2,15 @@ package placefinder.interface_adapters.controllers;
 
 import placefinder.interface_adapters.viewmodels.DashboardViewModel;
 import placefinder.interface_adapters.viewmodels.PlanDetailsViewModel;
-import placefinder.usecases.deleteplan.*;
-import placefinder.usecases.listplans.*;
-import placefinder.usecases.getplandetails.*;
+import placefinder.usecases.deleteplan.DeletePlanInputBoundary;
+import placefinder.usecases.deleteplan.DeletePlanInputData;
+import placefinder.usecases.getplandetails.GetPlanDetailsInputBoundary;
+import placefinder.usecases.getplandetails.GetPlanDetailsInputData;
+import placefinder.usecases.listplans.ListPlansInputBoundary;
+import placefinder.usecases.listplans.ListPlansInputData;
 import placefinder.usecases.plans.*;
 
-public class DashboardController implements
-        ListPlansOutputBoundary,
-        DeletePlanOutputBoundary,
-        ApplyPreferencesFromPlanOutputBoundary,
-        GetPlanDetailsOutputBoundary {
+public class DashboardController {
 
     private final ListPlansInputBoundary listPlansInteractor;
     private final DeletePlanInputBoundary deletePlanInteractor;
@@ -43,7 +42,7 @@ public class DashboardController implements
 
     public void deletePlan(int userId, int planId) {
         dashboardViewModel.setErrorMessage(null);
-        deletePlanInteractor.execute(new DeletePlanInputBoundary(planId, userId));
+        deletePlanInteractor.execute(new DeletePlanInputData(planId, userId));
     }
 
     public void applyPreferencesFromPlan(int userId, int planId) {
@@ -56,49 +55,6 @@ public class DashboardController implements
         getPlanDetailsInteractor.execute(new GetPlanDetailsInputData(planId));
     }
 
-    @Override
-    public void present(ListPlansOutputData outputData) {
-        if (outputData.getErrorMessage() != null) {
-            dashboardViewModel.setPlans(java.util.List.of());
-            dashboardViewModel.setErrorMessage(outputData.getErrorMessage());
-        } else {
-            dashboardViewModel.setPlans(outputData.getPlans());
-            dashboardViewModel.setErrorMessage(null);
-        }
-    }
-
-    @Override
-    public void present(DeletePlanOutputData outputData) {
-        if (outputData.isSuccess()) {
-            dashboardViewModel.setMessage(outputData.getMessage());
-            dashboardViewModel.setErrorMessage(null);
-            // actual removal from list should be triggered by caller with specific planId,
-            // or re-load the list; simplest is to re-call loadPlans() after delete.
-        } else {
-            dashboardViewModel.setErrorMessage(outputData.getMessage());
-        }
-    }
-
-    @Override
-    public void present(ApplyPreferencesFromPlanOutputData outputData) {
-        if (outputData.isSuccess()) {
-            dashboardViewModel.setMessage(outputData.getMessage());
-            dashboardViewModel.setErrorMessage(null);
-        } else {
-            dashboardViewModel.setErrorMessage(outputData.getMessage());
-        }
-    }
-
-    @Override
-    public void present(GetPlanDetailsOutputData outputData) {
-        if (outputData.getErrorMessage() != null) {
-            planDetailsViewModel.setPlan(null);
-            planDetailsViewModel.setErrorMessage(outputData.getErrorMessage());
-        } else {
-            planDetailsViewModel.setPlan(outputData.getPlan());
-            planDetailsViewModel.setErrorMessage(null);
-        }
-    }
 
     public DashboardViewModel getDashboardViewModel() { return dashboardViewModel; }
     public PlanDetailsViewModel getPlanDetailsViewModel() { return planDetailsViewModel; }

@@ -1,7 +1,25 @@
 package placefinder.frameworks_drivers.view.frames;
 
-import placefinder.interface_adapters.controllers.*;
-import placefinder.interface_adapters.viewmodels.*;
+import placefinder.entities.Plan;
+
+// Controllers
+import placefinder.interface_adapters.controllers.LoginController;
+import placefinder.interface_adapters.controllers.RegisterController;
+import placefinder.interface_adapters.controllers.VerifyEmailController;
+import placefinder.interface_adapters.controllers.PreferencesController;
+import placefinder.interface_adapters.controllers.PlanCreationController;
+import placefinder.interface_adapters.controllers.DashboardController;
+import placefinder.interface_adapters.controllers.WeatherAdviceController;
+
+// ViewModels
+import placefinder.interface_adapters.viewmodels.LoginViewModel;
+import placefinder.interface_adapters.viewmodels.RegisterViewModel;
+import placefinder.interface_adapters.viewmodels.VerifyEmailViewModel;
+import placefinder.interface_adapters.viewmodels.PreferencesViewModel;
+import placefinder.interface_adapters.viewmodels.PlanCreationViewModel;
+import placefinder.interface_adapters.viewmodels.DashboardViewModel;
+import placefinder.interface_adapters.viewmodels.PlanDetailsViewModel;
+import placefinder.interface_adapters.viewmodels.WeatherAdviceViewModel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -12,7 +30,7 @@ import java.awt.*;
  * Responsibilities:
  * - Holds and switches between UI screens using CardLayout.
  * - Receives controllers + view models from main application (TravelSchedulerApp).
- * - Controls navigation (Login → Register → Preferences → Create Plan → Plan Details).
+ * - Controls navigation (Login → Register → Dashboard → Preferences → Plan → Weather → Plan Details).
  * - Stores active session state (current user).
  */
 public class AppFrame extends JFrame {
@@ -23,6 +41,8 @@ public class AppFrame extends JFrame {
     private final VerifyEmailController verifyEmailController;
     private final PreferencesController preferencesController;
     private final PlanCreationController planCreationController;
+    private final DashboardController dashboardController;
+    private final WeatherAdviceController weatherAdviceController;
 
     // ==== ViewModels ====
     private final LoginViewModel loginVM;
@@ -30,7 +50,9 @@ public class AppFrame extends JFrame {
     private final VerifyEmailViewModel verifyVM;
     private final PreferencesViewModel preferencesVM;
     private final PlanCreationViewModel planCreationVM;
+    private final DashboardViewModel dashboardVM;
     private final PlanDetailsViewModel planDetailsVM;
+    private final WeatherAdviceViewModel weatherAdviceVM;
 
     // ==== Session state ====
     private Integer currentUserId = null;
@@ -41,22 +63,25 @@ public class AppFrame extends JFrame {
     private JPanel mainPanel;
 
     // ==== Screen names ====
-    public static final String CARD_LOGIN = "login";
-    public static final String CARD_REGISTER = "register";
-    public static final String CARD_PREFERENCES = "preferences";
-    public static final String CARD_PLAN_CREATE = "planCreate";
+    public static final String CARD_LOGIN        = "login";
+    public static final String CARD_REGISTER     = "register";
+    public static final String CARD_DASHBOARD    = "dashboard";
+    public static final String CARD_PREFERENCES  = "preferences";
+    public static final String CARD_PLAN         = "plan";
+    public static final String CARD_WEATHER      = "weather";
     public static final String CARD_PLAN_DETAILS = "planDetails";
 
     // ==== Panels ====
-    private LoginPanel loginPanel;
-    private RegisterPanel registerPanel;
-    private PreferencesPanel preferencesPanel;
-    private PlanBuilderPanel planBuilderPanel;
-    private PlanDetailsPanel planDetailsPanel;
+    private LoginPanel        loginPanel;
+    private RegisterPanel     registerPanel;
+    private DashboardPanel    dashboardPanel;
+    private PreferencesPanel  preferencesPanel;
+    private PlanBuilderPanel  planBuilderPanel;
+    private WeatherAdvicePanel weatherAdvicePanel;
+    private PlanDetailsPanel  planDetailsPanel;
 
     /**
      * Full constructor — receives all dependencies from TravelSchedulerApp.
-     * This keeps the UI framework-independent from business logic layers.
      */
     public AppFrame(
             LoginController loginController,
@@ -64,27 +89,37 @@ public class AppFrame extends JFrame {
             VerifyEmailController verifyEmailController,
             PreferencesController preferencesController,
             PlanCreationController planCreationController,
+            DashboardController dashboardController,
+            WeatherAdviceController weatherAdviceController,
             LoginViewModel loginVM,
             RegisterViewModel registerVM,
             VerifyEmailViewModel verifyVM,
             PreferencesViewModel preferencesVM,
             PlanCreationViewModel planCreationVM,
-            PlanDetailsViewModel planDetailsVM
+            DashboardViewModel dashboardVM,
+            PlanDetailsViewModel planDetailsVM,
+            WeatherAdviceViewModel weatherAdviceVM
     ) {
         super("PlaceFinder");
 
-        this.loginController = loginController;
-        this.registerController = registerController;
-        this.verifyEmailController = verifyEmailController;
-        this.preferencesController = preferencesController;
+        // Controllers
+        this.loginController        = loginController;
+        this.registerController     = registerController;
+        this.verifyEmailController  = verifyEmailController;
+        this.preferencesController  = preferencesController;
         this.planCreationController = planCreationController;
+        this.dashboardController    = dashboardController;
+        this.weatherAdviceController = weatherAdviceController;
 
-        this.loginVM = loginVM;
-        this.registerVM = registerVM;
-        this.verifyVM = verifyVM;
-        this.preferencesVM = preferencesVM;
+        // ViewModels
+        this.loginVM        = loginVM;
+        this.registerVM     = registerVM;
+        this.verifyVM       = verifyVM;
+        this.preferencesVM  = preferencesVM;
         this.planCreationVM = planCreationVM;
-        this.planDetailsVM = planDetailsVM;
+        this.dashboardVM    = dashboardVM;
+        this.planDetailsVM  = planDetailsVM;
+        this.weatherAdviceVM = weatherAdviceVM;
 
         initUI();
     }
@@ -95,51 +130,109 @@ public class AppFrame extends JFrame {
         setLocationRelativeTo(null);
 
         cardLayout = new CardLayout();
-        mainPanel = new JPanel(cardLayout);
+        mainPanel  = new JPanel(cardLayout);
 
-        // Create screens with injected controllers + ViewModels
+        // ===== Instantiate screens with proper dependencies =====
+
+        // Login screen
         loginPanel = new LoginPanel(this, loginController, loginVM);
 
+        // Register screen – includes verify email support
         registerPanel = new RegisterPanel(
-                this, registerController, registerVM, verifyEmailController, verifyVM
+                this,
+                registerController,
+                registerVM,
+                verifyEmailController,
+                verifyVM
         );
 
+        // Dashboard
+        dashboardPanel = new DashboardPanel(
+                this,
+                dashboardController,
+                dashboardVM,
+                planDetailsVM
+        );
+
+        // Preferences
         preferencesPanel = new PreferencesPanel(
-                this, preferencesController, preferencesVM
+                this,
+                preferencesController,
+                preferencesVM
         );
 
+        // Plan builder (with weather-aware recommendations)
         planBuilderPanel = new PlanBuilderPanel(
-                this, planCreationController, planCreationVM
+                this,
+                planCreationController,
+                planCreationVM,
+                weatherAdviceController,
+                weatherAdviceVM
         );
 
+        // Standalone Weather Advice screen
+        weatherAdvicePanel = new WeatherAdvicePanel(
+                this,
+                weatherAdviceController,
+                weatherAdviceVM
+        );
+
+        // Plan details
         planDetailsPanel = new PlanDetailsPanel(
-                this, planDetailsVM
+                dashboardController,
+                dashboardVM,
+                planDetailsVM,
+                this
         );
 
-        // Add screens into CardLayout container
-        mainPanel.add(loginPanel, CARD_LOGIN);
-        mainPanel.add(registerPanel, CARD_REGISTER);
-        mainPanel.add(preferencesPanel, CARD_PREFERENCES);
-        mainPanel.add(planBuilderPanel, CARD_PLAN_CREATE);
-        mainPanel.add(planDetailsPanel, CARD_PLAN_DETAILS);
+        // ===== Register screens into CardLayout =====
+        mainPanel.add(loginPanel,        CARD_LOGIN);
+        mainPanel.add(registerPanel,     CARD_REGISTER);
+        mainPanel.add(dashboardPanel,    CARD_DASHBOARD);
+        mainPanel.add(preferencesPanel,  CARD_PREFERENCES);
+        mainPanel.add(planBuilderPanel,  CARD_PLAN);
+        mainPanel.add(weatherAdvicePanel,CARD_WEATHER);
+        mainPanel.add(planDetailsPanel,  CARD_PLAN_DETAILS);
 
         setContentPane(mainPanel);
         showLogin();
     }
 
-    // ===== Navigation =====
+    // ===== Card switching helper =====
+    void showCard(String card) {
+        cardLayout.show(mainPanel, card);
+    }
 
-    public void showLogin() { showCard(CARD_LOGIN); }
-    public void showRegister() { showCard(CARD_REGISTER); }
+    // ===== Navigation helpers =====
+
+    public void showLogin() {
+        showCard(CARD_LOGIN);
+    }
+
+    public void showRegister() {
+        showCard(CARD_REGISTER);
+    }
+
+    public void showDashboard() {
+        if (currentUserId != null) {
+            dashboardPanel.refreshPlans();
+        }
+        showCard(CARD_DASHBOARD);
+    }
 
     public void showPreferences() {
-        preferencesPanel.loadForCurrentUser(); // refresh preferences before showing
+        preferencesPanel.loadForCurrentUser();
         showCard(CARD_PREFERENCES);
     }
 
-    public void showPlanCreation() {
+    public void showNewPlan() {
         planBuilderPanel.setupForNewPlan();
-        showCard(CARD_PLAN_CREATE);
+        showCard(CARD_PLAN);
+    }
+
+    public void showWeatherAdvice() {
+        weatherAdvicePanel.resetFields();
+        showCard(CARD_WEATHER);
     }
 
     public void showPlanDetails() {
@@ -147,27 +240,35 @@ public class AppFrame extends JFrame {
         showCard(CARD_PLAN_DETAILS);
     }
 
-    private void showCard(String name) {
-        cardLayout.show(mainPanel, name);
+    public void openPlanEditorWithPlan(Plan plan) {
+        planBuilderPanel.editExistingPlan(plan);
+        showCard(CARD_PLAN);
     }
 
-    // ===== Session Management =====
+    // ===== Session management =====
 
     public void onLoginSuccess() {
         if (loginVM.getLoggedInUser() != null) {
-            currentUserId = loginVM.getLoggedInUser().getId();
+            currentUserId   = loginVM.getLoggedInUser().getId();
             currentUserName = loginVM.getLoggedInUser().getName();
-            showPreferences();
+            // After successful login, go to dashboard (as before)
+            showDashboard();
         }
     }
 
     public void logout() {
-        currentUserId = null;
+        currentUserId   = null;
         currentUserName = null;
         loginVM.setLoggedInUser(null);
+        loginVM.setErrorMessage(null);
         showLogin();
     }
 
-    public Integer getCurrentUserId() { return currentUserId; }
-    public String getCurrentUserName() { return currentUserName; }
+    public Integer getCurrentUserId() {
+        return currentUserId;
+    }
+
+    public String getCurrentUserName() {
+        return currentUserName;
+    }
 }
