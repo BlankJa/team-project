@@ -58,14 +58,12 @@ public class TravelSchedulerApp {
 
     public static void main(String[] args) {
         // Initialize JavaFX platform (for video playback)
-        // Check if JavaFX is already started
-        if (!Platform.isFxApplicationThread()) {
-            try {
-                Platform.startup(() -> {});
-            } catch (IllegalStateException e) {
-                // JavaFX may already be started, ignore this exception
-                System.out.println("JavaFX platform already started");
-            }
+        // JavaFX must be started before creating JFXPanel
+        try {
+            Platform.startup(() -> {});
+        } catch (IllegalStateException e) {
+            // JavaFX may already be started, ignore this exception
+            System.out.println("JavaFX platform already started");
         }
 
         // Ensure database is initialized (triggers static init)
@@ -87,12 +85,6 @@ public class TravelSchedulerApp {
         EmailGateway emailGateway = new SmtpEmailGateway(
                 "subhanakbar908@gmail.com",    // your Gmail address
                 "eqrsbydralnvylzm"              // your 16-char app password
-        );
-
-        // Places API with optional debugging (configured above)
-        PlacesGateway placesGateway = new GeoapifyPlacesGateway(
-                "YOUR_GEOAPIFY_API_KEY_HERE",   // Get free key at Geoapify
-                apiLogger                       // Uses the logger configured above
         );
 
         // ========== VIEW MODELS ==========
