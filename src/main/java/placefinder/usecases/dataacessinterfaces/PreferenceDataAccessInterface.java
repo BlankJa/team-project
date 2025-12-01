@@ -1,4 +1,4 @@
-package placefinder.usecases.ports;
+package placefinder.usecases.dataacessinterfaces;
 
 import placefinder.entities.FavoriteLocation;
 import placefinder.entities.PreferenceProfile;
@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Gateway interface for accessing and persisting user preferences and favorite locations.
  */
-public interface PreferenceGateway {
+public interface PreferenceDataAccessInterface {
     PreferenceProfile loadForUser(int userId) throws Exception;
     void saveForUser(PreferenceProfile profile) throws Exception;
 

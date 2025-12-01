@@ -1,7 +1,7 @@
 package placefinder.usecases.preferences;
 
 import placefinder.entities.PreferenceProfile;
-import placefinder.usecases.ports.PreferenceGateway;
+import placefinder.usecases.dataacessinterfaces.PreferenceDataAccessInterface;
 
 import java.util.HashMap;
 import java.util.List;
@@ -12,12 +12,12 @@ import java.util.Map;
  */
 public class UpdatePreferencesInteractor implements UpdatePreferencesInputBoundary {
 
-    private final PreferenceGateway preferenceGateway;
+    private final PreferenceDataAccessInterface preferenceDataAccessInterface;
     private final UpdatePreferencesOutputBoundary presenter;
 
-    public UpdatePreferencesInteractor(PreferenceGateway preferenceGateway,
+    public UpdatePreferencesInteractor(PreferenceDataAccessInterface preferenceDataAccessInterface,
                                        UpdatePreferencesOutputBoundary presenter) {
-        this.preferenceGateway = preferenceGateway;
+        this.preferenceDataAccessInterface = preferenceDataAccessInterface;
         this.presenter = presenter;
     }
 
@@ -46,14 +46,14 @@ public class UpdatePreferencesInteractor implements UpdatePreferencesInputBounda
                 return;
             }
             
-            PreferenceProfile profile = preferenceGateway.loadForUser(inputData.getUserId());
+            PreferenceProfile profile = preferenceDataAccessInterface.loadForUser(inputData.getUserId());
             profile.setRadiusKm(inputData.getRadiusKm());
             if (selectedCategories != null) {
                 profile.setSelectedCategories(new HashMap<>(selectedCategories));
             } else {
                 profile.setSelectedCategories(new HashMap<>());
             }
-            preferenceGateway.saveForUser(profile);
+            preferenceDataAccessInterface.saveForUser(profile);
             presenter.present(new UpdatePreferencesOutputData(true, "Preferences saved."));
         } catch (Exception e) {
             presenter.present(new UpdatePreferencesOutputData(false, e.getMessage()));

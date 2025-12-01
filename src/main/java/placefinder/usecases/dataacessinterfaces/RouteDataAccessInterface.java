@@ -1,4 +1,4 @@
-package placefinder.usecases.ports;
+package placefinder.usecases.dataacessinterfaces;
 
 import placefinder.entities.GeocodeResult;
 import placefinder.entities.PlanStop;
@@ -7,7 +7,7 @@ import placefinder.entities.Route;
 import java.time.LocalTime;
 import java.util.List;
 
-public interface RouteGateway {
+public interface RouteDataAccessInterface {
 
     /**
      * Compute the optimal walking route between plan stops.

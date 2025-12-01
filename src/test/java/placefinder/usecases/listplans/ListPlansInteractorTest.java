@@ -5,14 +5,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import placefinder.entities.Plan;
-import placefinder.usecases.ports.PlanGateway;
+import placefinder.usecases.dataacessinterfaces.PlanDataAccessInterface;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -23,7 +22,7 @@ import static org.mockito.Mockito.*;
  * <p>Design approach:
  * <ul>
  *     <li>Only infrastructure-style dependencies are mocked
- *         ({@link PlanGateway} and {@link ListPlansOutputBoundary}).</li>
+ *         ({@link PlanDataAccessInterface} and {@link ListPlansOutputBoundary}).</li>
  *     <li>Domain objects such as {@link Plan} are instantiated as real
  *         instances (not mocked), to avoid issues with class instrumentation
  *         and to better reflect real-world usage.</li>
@@ -38,7 +37,7 @@ class ListPlansInteractorTest {
     // -------------------------------------------------------------------------
 
     /** Data access abstraction used to load plans for a user (mock). */
-    private PlanGateway planGateway;
+    private PlanDataAccessInterface planDataAccessInterface;
 
     /** Presenter that receives output data for the view layer (mock). */
     private ListPlansOutputBoundary presenter;
@@ -56,9 +55,9 @@ class ListPlansInteractorTest {
      */
     @BeforeEach
     void setUp() {
-        planGateway = mock(PlanGateway.class);
+        planDataAccessInterface = mock(PlanDataAccessInterface.class);
         presenter   = mock(ListPlansOutputBoundary.class);
-        interactor  = new ListPlansInteractor(planGateway, presenter);
+        interactor  = new ListPlansInteractor(planDataAccessInterface, presenter);
     }
 
     // -------------------------------------------------------------------------
@@ -113,7 +112,7 @@ class ListPlansInteractorTest {
      * <p>For a user with no saved plans, the gateway returns an empty list.
      * The interactor should:
      * <ul>
-     *     <li>Call {@link PlanGateway#findPlansByUser(int)} with the correct userId.</li>
+     *     <li>Call {@link PlanDataAccessInterface#findPlansByUser(int)} with the correct userId.</li>
      *     <li>Forward an output object containing that empty list.</li>
      *     <li>Ensure {@code errorMessage} is {@code null} to signal success.</li>
      * </ul>
@@ -126,13 +125,13 @@ class ListPlansInteractorTest {
         ListPlansInputData input = new ListPlansInputData(userId);
 
         List<Plan> emptyPlans = List.of();
-        when(planGateway.findPlansByUser(userId)).thenReturn(emptyPlans);
+        when(planDataAccessInterface.findPlansByUser(userId)).thenReturn(emptyPlans);
 
         // Act
         interactor.execute(input);
 
         // Assert
-        verify(planGateway, times(1)).findPlansByUser(userId);
+        verify(planDataAccessInterface, times(1)).findPlansByUser(userId);
 
         ListPlansOutputData out = capturePresenterOutput();
         assertNotNull(out.getPlans(), "Plans list must not be null on success.");
@@ -163,13 +162,13 @@ class ListPlansInteractorTest {
         Plan plan2 = createPlan(2, userId, "Afternoon Museum Walk");
         List<Plan> plans = List.of(plan1, plan2);
 
-        when(planGateway.findPlansByUser(userId)).thenReturn(plans);
+        when(planDataAccessInterface.findPlansByUser(userId)).thenReturn(plans);
 
         // Act
         interactor.execute(input);
 
         // Assert
-        verify(planGateway).findPlansByUser(userId);
+        verify(planDataAccessInterface).findPlansByUser(userId);
 
         ListPlansOutputData out = capturePresenterOutput();
         assertEquals(2, out.getPlans().size(), "Exactly two plans should be returned.");
@@ -197,13 +196,13 @@ class ListPlansInteractorTest {
         Plan plan = createPlan(10, userId, "Evening River Walk");
         List<Plan> plans = List.of(plan);
 
-        when(planGateway.findPlansByUser(userId)).thenReturn(plans);
+        when(planDataAccessInterface.findPlansByUser(userId)).thenReturn(plans);
 
         // Act
         interactor.execute(input);
 
         // Assert – userId propagation
-        verify(planGateway, times(1)).findPlansByUser(userId);
+        verify(planDataAccessInterface, times(1)).findPlansByUser(userId);
 
         ListPlansOutputData out = capturePresenterOutput();
         assertSame(plans, out.getPlans());
@@ -229,13 +228,13 @@ class ListPlansInteractorTest {
             manyPlans.add(createPlan(1000 + i, userId, "Plan #" + i));
         }
 
-        when(planGateway.findPlansByUser(userId)).thenReturn(manyPlans);
+        when(planDataAccessInterface.findPlansByUser(userId)).thenReturn(manyPlans);
 
         // Act
         interactor.execute(input);
 
         // Assert
-        verify(planGateway).findPlansByUser(userId);
+        verify(planDataAccessInterface).findPlansByUser(userId);
 
         ListPlansOutputData out = capturePresenterOutput();
         assertEquals(25, out.getPlans().size(), "All plans should be forwarded to the presenter.");
@@ -263,13 +262,13 @@ class ListPlansInteractorTest {
         int userId = 404;
         ListPlansInputData input = new ListPlansInputData(userId);
 
-        when(planGateway.findPlansByUser(userId)).thenReturn(null);
+        when(planDataAccessInterface.findPlansByUser(userId)).thenReturn(null);
 
         // Act
         interactor.execute(input);
 
         // Assert
-        verify(planGateway).findPlansByUser(userId);
+        verify(planDataAccessInterface).findPlansByUser(userId);
 
         ListPlansOutputData out = capturePresenterOutput();
         assertNull(out.getPlans(), "Plans reference will be null if gateway returns null.");
@@ -302,13 +301,13 @@ class ListPlansInteractorTest {
         ListPlansInputData input = new ListPlansInputData(userId);
 
         doThrow(new Exception("Database connection failed"))
-                .when(planGateway).findPlansByUser(userId);
+                .when(planDataAccessInterface).findPlansByUser(userId);
 
         // Act
         interactor.execute(input);
 
         // Assert
-        verify(planGateway).findPlansByUser(userId);
+        verify(planDataAccessInterface).findPlansByUser(userId);
 
         ListPlansOutputData out = capturePresenterOutput();
         assertNotNull(out.getPlans(), "Plans list must not be null on exception (use empty list).");
@@ -332,13 +331,13 @@ class ListPlansInteractorTest {
         ListPlansInputData input = new ListPlansInputData(userId);
 
         Exception ex = new Exception((String) null);
-        doThrow(ex).when(planGateway).findPlansByUser(userId);
+        doThrow(ex).when(planDataAccessInterface).findPlansByUser(userId);
 
         // Act
         interactor.execute(input);
 
         // Assert
-        verify(planGateway).findPlansByUser(userId);
+        verify(planDataAccessInterface).findPlansByUser(userId);
 
         ListPlansOutputData out = capturePresenterOutput();
         assertTrue(out.getPlans().isEmpty(), "Plans list should be empty on exception.");
@@ -361,17 +360,17 @@ class ListPlansInteractorTest {
         ListPlansInputData input = new ListPlansInputData(userId);
 
         List<Plan> plans = List.of(createPlan(1, userId, "Single Plan"));
-        when(planGateway.findPlansByUser(userId)).thenReturn(plans);
+        when(planDataAccessInterface.findPlansByUser(userId)).thenReturn(plans);
 
         // Act
         interactor.execute(input);
 
         // Assert
-        verify(planGateway, times(1)).findPlansByUser(userId);
+        verify(planDataAccessInterface, times(1)).findPlansByUser(userId);
         verify(presenter, times(1)).present(any(ListPlansOutputData.class));
 
         // No further interactions beyond the expected collaboration
-        verifyNoMoreInteractions(planGateway, presenter);
+        verifyNoMoreInteractions(planDataAccessInterface, presenter);
     }
 
     /**
@@ -386,15 +385,15 @@ class ListPlansInteractorTest {
         ListPlansInputData input = new ListPlansInputData(userId);
 
         doThrow(new Exception("Transient failure"))
-                .when(planGateway).findPlansByUser(userId);
+                .when(planDataAccessInterface).findPlansByUser(userId);
 
         // Act
         interactor.execute(input);
 
         // Assert
-        verify(planGateway, times(1)).findPlansByUser(userId);
+        verify(planDataAccessInterface, times(1)).findPlansByUser(userId);
         verify(presenter, times(1)).present(any(ListPlansOutputData.class));
-        verifyNoMoreInteractions(planGateway, presenter);
+        verifyNoMoreInteractions(planDataAccessInterface, presenter);
     }
 
     // -------------------------------------------------------------------------
@@ -420,7 +419,7 @@ class ListPlansInteractorTest {
         List<Plan> mutableList = new ArrayList<>();
         mutableList.add(createPlan(1, userId, "Original"));
 
-        when(planGateway.findPlansByUser(userId)).thenReturn(mutableList);
+        when(planDataAccessInterface.findPlansByUser(userId)).thenReturn(mutableList);
 
         // Act
         interactor.execute(input);

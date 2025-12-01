@@ -2,32 +2,32 @@ package placefinder.usecases.favouritelocation;
 
 import placefinder.entities.FavoriteLocation;
 import placefinder.entities.GeocodeResult;
-import placefinder.usecases.ports.GeocodingGateway;
-import placefinder.usecases.ports.PreferenceGateway;
+import placefinder.usecases.dataacessinterfaces.GeocodingDataAccessInterface;
+import placefinder.usecases.dataacessinterfaces.PreferenceDataAccessInterface;
 
 public class AddFavoriteInteractor implements AddFavoriteInputBoundary {
 
-    private final PreferenceGateway preferenceGateway;
-    private final GeocodingGateway geocodingGateway;
+    private final PreferenceDataAccessInterface preferenceDataAccessInterface;
+    private final GeocodingDataAccessInterface geocodingDataAccessInterface;
     private final AddFavoriteOutputBoundary presenter;
 
-    public AddFavoriteInteractor(PreferenceGateway preferenceGateway,
-                                 GeocodingGateway geocodingGateway,
+    public AddFavoriteInteractor(PreferenceDataAccessInterface preferenceDataAccessInterface,
+                                 GeocodingDataAccessInterface geocodingDataAccessInterface,
                                  AddFavoriteOutputBoundary presenter) {
-        this.preferenceGateway = preferenceGateway;
-        this.geocodingGateway = geocodingGateway;
+        this.preferenceDataAccessInterface = preferenceDataAccessInterface;
+        this.geocodingDataAccessInterface = geocodingDataAccessInterface;
         this.presenter = presenter;
     }
 
     @Override
     public void execute(AddFavoriteInputData inputData) {
         try {
-            GeocodeResult geo = geocodingGateway.geocode(inputData.getAddress());
+            GeocodeResult geo = geocodingDataAccessInterface.geocode(inputData.getAddress());
             if (geo == null) {
                 presenter.present(new AddFavoriteOutputData(null, "Could not find that location."));
                 return;
             }
-            FavoriteLocation fav = preferenceGateway.addFavorite(
+            FavoriteLocation fav = preferenceDataAccessInterface.addFavorite(
                     inputData.getUserId(),
                     inputData.getName(),
                     geo.getFormattedAddress(),

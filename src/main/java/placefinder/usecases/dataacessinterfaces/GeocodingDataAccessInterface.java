@@ -1,7 +1,7 @@
-package placefinder.usecases.ports;
+package placefinder.usecases.dataacessinterfaces;
 
 import placefinder.entities.GeocodeResult;
 
-public interface GeocodingGateway {
+public interface GeocodingDataAccessInterface {
     GeocodeResult geocode(String query) throws Exception;
 }

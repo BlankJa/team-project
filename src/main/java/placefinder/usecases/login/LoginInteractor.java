@@ -2,7 +2,7 @@ package placefinder.usecases.login;
 
 import placefinder.entities.PasswordUtil;
 import placefinder.entities.User;
-import placefinder.usecases.ports.UserGateway;
+import placefinder.usecases.dataacessinterfaces.UserDataAccessInterface;
 
 /**
  * Interactor for the login use case.
@@ -11,18 +11,18 @@ import placefinder.usecases.ports.UserGateway;
  */
 public class LoginInteractor implements LoginInputBoundary {
 
-    private final UserGateway userGateway;
+    private final UserDataAccessInterface userDataAccessInterface;
     private final LoginOutputBoundary presenter;
 
-    public LoginInteractor(UserGateway userGateway, LoginOutputBoundary presenter) {
-        this.userGateway = userGateway;
+    public LoginInteractor(UserDataAccessInterface userDataAccessInterface, LoginOutputBoundary presenter) {
+        this.userDataAccessInterface = userDataAccessInterface;
         this.presenter = presenter;
     }
 
     @Override
     public void execute(LoginInputData inputData) {
         try {
-            User user = userGateway.findByEmail(inputData.getEmail());
+            User user = userDataAccessInterface.findByEmail(inputData.getEmail());
             if (user == null) {
                 presenter.present(new LoginOutputData(false, "Invalid email or password.", null));
                 return;

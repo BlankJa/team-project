@@ -1,22 +1,22 @@
 package placefinder.usecases.favouritelocation;
 
-import placefinder.usecases.ports.PreferenceGateway;
+import placefinder.usecases.dataacessinterfaces.PreferenceDataAccessInterface;
 
 public class DeleteFavoriteInteractor implements DeleteFavoriteInputBoundary {
 
-    private final PreferenceGateway preferenceGateway;
+    private final PreferenceDataAccessInterface preferenceDataAccessInterface;
     private final DeleteFavoriteOutputBoundary presenter;
 
-    public DeleteFavoriteInteractor(PreferenceGateway preferenceGateway,
+    public DeleteFavoriteInteractor(PreferenceDataAccessInterface preferenceDataAccessInterface,
                                     DeleteFavoriteOutputBoundary presenter) {
-        this.preferenceGateway = preferenceGateway;
+        this.preferenceDataAccessInterface = preferenceDataAccessInterface;
         this.presenter = presenter;
     }
 
     @Override
     public void execute(DeleteFavoriteInputData inputData) {
         try {
-            preferenceGateway.deleteFavorite(inputData.getFavoriteId(), inputData.getUserId());
+            preferenceDataAccessInterface.deleteFavorite(inputData.getFavoriteId(), inputData.getUserId());
             presenter.present(new DeleteFavoriteOutputData(true, "Favorite deleted."));
         } catch (Exception e) {
             presenter.present(new DeleteFavoriteOutputData(false, e.getMessage()));

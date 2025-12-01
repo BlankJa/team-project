@@ -2,10 +2,10 @@ package placefinder.usecases.searchplaces;
 
 import org.junit.jupiter.api.Test;
 import placefinder.entities.*;
-import placefinder.usecases.ports.GeocodingGateway;
-import placefinder.usecases.ports.PlacesGateway;
-import placefinder.usecases.ports.PreferenceGateway;
-import placefinder.usecases.ports.WeatherGateway;
+import placefinder.usecases.dataacessinterfaces.GeocodingDataAccessInterface;
+import placefinder.usecases.dataacessinterfaces.PlacesDataAccessInterface;
+import placefinder.usecases.dataacessinterfaces.PreferenceDataAccessInterface;
+import placefinder.usecases.dataacessinterfaces.WeatherDataAccessInterface;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -41,24 +41,24 @@ class SearchPlacesInteractorTest {
     @Test
     void geocodingFails_returnsErrorAndNoPlaces() throws Exception {
         // Arrange
-        PreferenceGateway prefGateway = mock(PreferenceGateway.class);
-        GeocodingGateway geocodingGateway = mock(GeocodingGateway.class);
-        PlacesGateway placesGateway = mock(PlacesGateway.class);
-        WeatherGateway weatherGateway = mock(WeatherGateway.class);
+        PreferenceDataAccessInterface prefGateway = mock(PreferenceDataAccessInterface.class);
+        GeocodingDataAccessInterface geocodingDataAccessInterface = mock(GeocodingDataAccessInterface.class);
+        PlacesDataAccessInterface placesDataAccessInterface = mock(PlacesDataAccessInterface.class);
+        WeatherDataAccessInterface weatherDataAccessInterface = mock(WeatherDataAccessInterface.class);
 
         PreferenceProfile profile = mock(PreferenceProfile.class);
         when(prefGateway.loadForUser(1)).thenReturn(profile);
 
         // Geocoder returns null => location not found
-        when(geocodingGateway.geocode("NowhereLand")).thenReturn(null);
+        when(geocodingDataAccessInterface.geocode("NowhereLand")).thenReturn(null);
 
         CapturingPresenter presenter = new CapturingPresenter();
 
         SearchPlacesInteractor interactor = new SearchPlacesInteractor(
                 prefGateway,
-                geocodingGateway,
-                placesGateway,
-                weatherGateway,
+                geocodingDataAccessInterface,
+                placesDataAccessInterface,
+                weatherDataAccessInterface,
                 presenter
         );
 
@@ -80,10 +80,10 @@ class SearchPlacesInteractorTest {
     @Test
     void noInterests_generalSearchWithNullCategories() throws Exception {
         // Arrange
-        PreferenceGateway prefGateway = mock(PreferenceGateway.class);
-        GeocodingGateway geocodingGateway = mock(GeocodingGateway.class);
-        PlacesGateway placesGateway = mock(PlacesGateway.class);
-        WeatherGateway weatherGateway = mock(WeatherGateway.class);
+        PreferenceDataAccessInterface prefGateway = mock(PreferenceDataAccessInterface.class);
+        GeocodingDataAccessInterface geocodingDataAccessInterface = mock(GeocodingDataAccessInterface.class);
+        PlacesDataAccessInterface placesDataAccessInterface = mock(PlacesDataAccessInterface.class);
+        WeatherDataAccessInterface weatherDataAccessInterface = mock(WeatherDataAccessInterface.class);
 
         PreferenceProfile profile = mock(PreferenceProfile.class);
         when(prefGateway.loadForUser(1)).thenReturn(profile);
@@ -94,10 +94,10 @@ class SearchPlacesInteractorTest {
         when(geo.getLat()).thenReturn(43.65);
         when(geo.getLon()).thenReturn(-79.38);
         when(geo.getFormattedAddress()).thenReturn("Toronto, ON");
-        when(geocodingGateway.geocode("Toronto")).thenReturn(geo);
+        when(geocodingDataAccessInterface.geocode("Toronto")).thenReturn(geo);
 
         WeatherSummary weather = mock(WeatherSummary.class);
-        when(weatherGateway.getDailyWeather(43.65, -79.38, LocalDate.parse("2025-11-19")))
+        when(weatherDataAccessInterface.getDailyWeather(43.65, -79.38, LocalDate.parse("2025-11-19")))
                 .thenReturn(weather);
         when(weather.isPrecipitationLikely()).thenReturn(false);
         when(weather.getTemperatureC()).thenReturn(20.0);
@@ -109,7 +109,7 @@ class SearchPlacesInteractorTest {
         when(place.getDistanceKm()).thenReturn(1.2);
 
         // when no interests, categories param is null
-        when(placesGateway.searchPlaces(
+        when(placesDataAccessInterface.searchPlaces(
                 anyDouble(), anyDouble(), anyDouble(), isNull())
         ).thenReturn(List.of(place));
 
@@ -117,9 +117,9 @@ class SearchPlacesInteractorTest {
 
         SearchPlacesInteractor interactor = new SearchPlacesInteractor(
                 prefGateway,
-                geocodingGateway,
-                placesGateway,
-                weatherGateway,
+                geocodingDataAccessInterface,
+                placesDataAccessInterface,
+                weatherDataAccessInterface,
                 presenter
         );
 
@@ -144,10 +144,10 @@ class SearchPlacesInteractorTest {
     @Test
     void wetWeather_favoursIndoorPlacesAndAdviceMentionsIndoor() throws Exception {
         // Arrange
-        PreferenceGateway prefGateway = mock(PreferenceGateway.class);
-        GeocodingGateway geocodingGateway = mock(GeocodingGateway.class);
-        PlacesGateway placesGateway = mock(PlacesGateway.class);
-        WeatherGateway weatherGateway = mock(WeatherGateway.class);
+        PreferenceDataAccessInterface prefGateway = mock(PreferenceDataAccessInterface.class);
+        GeocodingDataAccessInterface geocodingDataAccessInterface = mock(GeocodingDataAccessInterface.class);
+        PlacesDataAccessInterface placesDataAccessInterface = mock(PlacesDataAccessInterface.class);
+        WeatherDataAccessInterface weatherDataAccessInterface = mock(WeatherDataAccessInterface.class);
 
         PreferenceProfile profile = mock(PreferenceProfile.class);
         when(prefGateway.loadForUser(1)).thenReturn(profile);
@@ -159,10 +159,10 @@ class SearchPlacesInteractorTest {
         when(geo.getLat()).thenReturn(43.65);
         when(geo.getLon()).thenReturn(-79.38);
         when(geo.getFormattedAddress()).thenReturn("Toronto, ON");
-        when(geocodingGateway.geocode("Toronto")).thenReturn(geo);
+        when(geocodingDataAccessInterface.geocode("Toronto")).thenReturn(geo);
 
         WeatherSummary weather = mock(WeatherSummary.class);
-        when(weatherGateway.getDailyWeather(43.65, -79.38, LocalDate.parse("2025-11-19")))
+        when(weatherDataAccessInterface.getDailyWeather(43.65, -79.38, LocalDate.parse("2025-11-19")))
                 .thenReturn(weather);
         when(weather.isPrecipitationLikely()).thenReturn(true); // WET
         when(weather.getTemperatureC()).thenReturn(8.0);
@@ -180,7 +180,7 @@ class SearchPlacesInteractorTest {
         when(outdoor.getDistanceKm()).thenReturn(1.0);
 
         // Interactor will call searchPlaces once per interest; we just return both
-        when(placesGateway.searchPlaces(
+        when(placesDataAccessInterface.searchPlaces(
                 anyDouble(), anyDouble(), anyDouble(), anyMap())
         ).thenReturn(List.of(indoor, outdoor));
 
@@ -188,9 +188,9 @@ class SearchPlacesInteractorTest {
 
         SearchPlacesInteractor interactor = new SearchPlacesInteractor(
                 prefGateway,
-                geocodingGateway,
-                placesGateway,
-                weatherGateway,
+                geocodingDataAccessInterface,
+                placesDataAccessInterface,
+                weatherDataAccessInterface,
                 presenter
         );
 
@@ -219,10 +219,10 @@ class SearchPlacesInteractorTest {
     @Test
     void dryWeather_favoursOutdoorPlacesAndAdviceMentionsOutdoor() throws Exception {
         // Arrange
-        PreferenceGateway prefGateway = mock(PreferenceGateway.class);
-        GeocodingGateway geocodingGateway = mock(GeocodingGateway.class);
-        PlacesGateway placesGateway = mock(PlacesGateway.class);
-        WeatherGateway weatherGateway = mock(WeatherGateway.class);
+        PreferenceDataAccessInterface prefGateway = mock(PreferenceDataAccessInterface.class);
+        GeocodingDataAccessInterface geocodingDataAccessInterface = mock(GeocodingDataAccessInterface.class);
+        PlacesDataAccessInterface placesDataAccessInterface = mock(PlacesDataAccessInterface.class);
+        WeatherDataAccessInterface weatherDataAccessInterface = mock(WeatherDataAccessInterface.class);
 
         PreferenceProfile profile = mock(PreferenceProfile.class);
         when(prefGateway.loadForUser(1)).thenReturn(profile);
@@ -234,10 +234,10 @@ class SearchPlacesInteractorTest {
         when(geo.getLat()).thenReturn(43.65);
         when(geo.getLon()).thenReturn(-79.38);
         when(geo.getFormattedAddress()).thenReturn("Toronto, ON");
-        when(geocodingGateway.geocode("Toronto")).thenReturn(geo);
+        when(geocodingDataAccessInterface.geocode("Toronto")).thenReturn(geo);
 
         WeatherSummary weather = mock(WeatherSummary.class);
-        when(weatherGateway.getDailyWeather(43.65, -79.38, LocalDate.parse("2025-11-19")))
+        when(weatherDataAccessInterface.getDailyWeather(43.65, -79.38, LocalDate.parse("2025-11-19")))
                 .thenReturn(weather);
         when(weather.isPrecipitationLikely()).thenReturn(false); // DRY
         when(weather.getTemperatureC()).thenReturn(22.0);
@@ -253,7 +253,7 @@ class SearchPlacesInteractorTest {
         when(outdoor.getCategories()).thenReturn(List.of("leisure.park"));
         when(outdoor.getDistanceKm()).thenReturn(1.0);
 
-        when(placesGateway.searchPlaces(
+        when(placesDataAccessInterface.searchPlaces(
                 anyDouble(), anyDouble(), anyDouble(), anyMap())
         ).thenReturn(List.of(indoor, outdoor));
 
@@ -261,9 +261,9 @@ class SearchPlacesInteractorTest {
 
         SearchPlacesInteractor interactor = new SearchPlacesInteractor(
                 prefGateway,
-                geocodingGateway,
-                placesGateway,
-                weatherGateway,
+                geocodingDataAccessInterface,
+                placesDataAccessInterface,
+                weatherDataAccessInterface,
                 presenter
         );
 
@@ -290,10 +290,10 @@ class SearchPlacesInteractorTest {
     @Test
     void weatherApiFailure_stillReturnsPlacesWithWeatherUnavailableMessage() throws Exception {
         // Arrange
-        PreferenceGateway prefGateway = mock(PreferenceGateway.class);
-        GeocodingGateway geocodingGateway = mock(GeocodingGateway.class);
-        PlacesGateway placesGateway = mock(PlacesGateway.class);
-        WeatherGateway weatherGateway = mock(WeatherGateway.class);
+        PreferenceDataAccessInterface prefGateway = mock(PreferenceDataAccessInterface.class);
+        GeocodingDataAccessInterface geocodingDataAccessInterface = mock(GeocodingDataAccessInterface.class);
+        PlacesDataAccessInterface placesDataAccessInterface = mock(PlacesDataAccessInterface.class);
+        WeatherDataAccessInterface weatherDataAccessInterface = mock(WeatherDataAccessInterface.class);
 
         PreferenceProfile profile = mock(PreferenceProfile.class);
         when(prefGateway.loadForUser(1)).thenReturn(profile);
@@ -304,10 +304,10 @@ class SearchPlacesInteractorTest {
         when(geo.getLat()).thenReturn(43.65);
         when(geo.getLon()).thenReturn(-79.38);
         when(geo.getFormattedAddress()).thenReturn("Toronto, ON");
-        when(geocodingGateway.geocode("Toronto")).thenReturn(geo);
+        when(geocodingDataAccessInterface.geocode("Toronto")).thenReturn(geo);
 
         // Weather gateway throws exception
-        when(weatherGateway.getDailyWeather(anyDouble(), anyDouble(), any(LocalDate.class)))
+        when(weatherDataAccessInterface.getDailyWeather(anyDouble(), anyDouble(), any(LocalDate.class)))
                 .thenThrow(new RuntimeException("Weather API down"));
 
         Place place = mock(Place.class);
@@ -315,7 +315,7 @@ class SearchPlacesInteractorTest {
         when(place.getCategories()).thenReturn(List.of("poi"));
         when(place.getDistanceKm()).thenReturn(0.5);
 
-        when(placesGateway.searchPlaces(
+        when(placesDataAccessInterface.searchPlaces(
                 anyDouble(), anyDouble(), anyDouble(), any())
         ).thenReturn(List.of(place));
 
@@ -323,9 +323,9 @@ class SearchPlacesInteractorTest {
 
         SearchPlacesInteractor interactor = new SearchPlacesInteractor(
                 prefGateway,
-                geocodingGateway,
-                placesGateway,
-                weatherGateway,
+                geocodingDataAccessInterface,
+                placesDataAccessInterface,
+                weatherDataAccessInterface,
                 presenter
         );
 
@@ -349,10 +349,10 @@ class SearchPlacesInteractorTest {
     @Test
     void noPlacesFound_returnsFriendlyError() throws Exception {
         // Arrange
-        PreferenceGateway prefGateway = mock(PreferenceGateway.class);
-        GeocodingGateway geocodingGateway = mock(GeocodingGateway.class);
-        PlacesGateway placesGateway = mock(PlacesGateway.class);
-        WeatherGateway weatherGateway = mock(WeatherGateway.class);
+        PreferenceDataAccessInterface prefGateway = mock(PreferenceDataAccessInterface.class);
+        GeocodingDataAccessInterface geocodingDataAccessInterface = mock(GeocodingDataAccessInterface.class);
+        PlacesDataAccessInterface placesDataAccessInterface = mock(PlacesDataAccessInterface.class);
+        WeatherDataAccessInterface weatherDataAccessInterface = mock(WeatherDataAccessInterface.class);
 
         PreferenceProfile profile = mock(PreferenceProfile.class);
         when(prefGateway.loadForUser(1)).thenReturn(profile);
@@ -363,18 +363,18 @@ class SearchPlacesInteractorTest {
         when(geo.getLat()).thenReturn(43.65);
         when(geo.getLon()).thenReturn(-79.38);
         when(geo.getFormattedAddress()).thenReturn("Toronto, ON");
-        when(geocodingGateway.geocode("Toronto")).thenReturn(geo);
+        when(geocodingDataAccessInterface.geocode("Toronto")).thenReturn(geo);
 
         // Weather is fine
         WeatherSummary weather = mock(WeatherSummary.class);
-        when(weatherGateway.getDailyWeather(anyDouble(), anyDouble(), any(LocalDate.class)))
+        when(weatherDataAccessInterface.getDailyWeather(anyDouble(), anyDouble(), any(LocalDate.class)))
                 .thenReturn(weather);
         when(weather.isPrecipitationLikely()).thenReturn(false);
         when(weather.getTemperatureC()).thenReturn(15.0);
         when(weather.getUvIndex()).thenReturn(3.0);
 
         // No places returned at all
-        when(placesGateway.searchPlaces(
+        when(placesDataAccessInterface.searchPlaces(
                 anyDouble(), anyDouble(), anyDouble(), any())
         ).thenReturn(List.of());
 
@@ -382,9 +382,9 @@ class SearchPlacesInteractorTest {
 
         SearchPlacesInteractor interactor = new SearchPlacesInteractor(
                 prefGateway,
-                geocodingGateway,
-                placesGateway,
-                weatherGateway,
+                geocodingDataAccessInterface,
+                placesDataAccessInterface,
+                weatherDataAccessInterface,
                 presenter
         );
 

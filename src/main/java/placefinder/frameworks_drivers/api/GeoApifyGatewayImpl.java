@@ -7,19 +7,19 @@ import com.google.gson.JsonParser;
 import placefinder.entities.DayTripExperienceCategories;
 import placefinder.entities.IndoorOutdoorType;
 import placefinder.entities.Place;
-import placefinder.usecases.ports.PlacesGateway;
+import placefinder.usecases.dataacessinterfaces.PlacesDataAccessInterface;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class GeoApifyPlacesGatewayImpl implements PlacesGateway {
+public class GeoApifyGatewayImpl implements PlacesDataAccessInterface {
     private final String apiKey;
 
-    public GeoApifyPlacesGatewayImpl() {
+    public GeoApifyGatewayImpl() {
         this.apiKey = "75be457789934a199ed4014ad24925ba";
     }
 
-    public GeoApifyPlacesGatewayImpl(String apiKey) {
+    public GeoApifyGatewayImpl(String apiKey) {
         this.apiKey = apiKey;
     }
 

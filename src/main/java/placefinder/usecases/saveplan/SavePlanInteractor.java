@@ -1,19 +1,19 @@
 package placefinder.usecases.saveplan;
 
 import placefinder.entities.Plan;
-import placefinder.usecases.ports.PlanGateway;
+import placefinder.usecases.dataacessinterfaces.PlanDataAccessInterface;
 
 /**
  * Interactor for saving plan.
  */
 public class SavePlanInteractor implements SavePlanInputBoundary {
 
-    private final PlanGateway planGateway;
+    private final PlanDataAccessInterface planDataAccessInterface;
     private final SavePlanOutputBoundary presenter;
 
-    public SavePlanInteractor(PlanGateway planGateway,
+    public SavePlanInteractor(PlanDataAccessInterface planDataAccessInterface,
                               SavePlanOutputBoundary presenter) {
-        this.planGateway = planGateway;
+        this.planDataAccessInterface = planDataAccessInterface;
         this.presenter = presenter;
     }
 
@@ -34,7 +34,7 @@ public class SavePlanInteractor implements SavePlanInputBoundary {
                 finalName = "Plan - " + plan.getDate() + " - " + plan.getOriginAddress();
             }
             plan.setName(finalName);
-            planGateway.savePlan(plan);
+            planDataAccessInterface.savePlan(plan);
             presenter.present(new SavePlanOutputData(true, "Plan saved.", plan));
         } catch (Exception e) {
             presenter.present(new SavePlanOutputData(false, e.getMessage(), null));

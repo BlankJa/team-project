@@ -1,7 +1,7 @@
 package placefinder.usecases.getplandetails;
 
 import placefinder.entities.Plan;
-import placefinder.usecases.ports.PlanGateway;
+import placefinder.usecases.dataacessinterfaces.PlanDataAccessInterface;
 
 /**
  * Interactor responsible for retrieving detailed information about a specific plan.
@@ -14,7 +14,7 @@ import placefinder.usecases.ports.PlanGateway;
 public class GetPlanDetailsInteractor implements GetPlanDetailsInputBoundary {
 
     /** Gateway abstraction used to load plans from the data layer */
-    private final PlanGateway planGateway;
+    private final PlanDataAccessInterface planDataAccessInterface;
 
     /** Output presenter that receives the formatted result */
     private final GetPlanDetailsOutputBoundary presenter;
@@ -22,12 +22,12 @@ public class GetPlanDetailsInteractor implements GetPlanDetailsInputBoundary {
     /**
      * Constructs the interactor with the required dependencies.
      *
-     * @param planGateway  data access interface for fetching plans
+     * @param planDataAccessInterface  data access interface for fetching plans
      * @param presenter    receives formatted output for the view layer
      */
-    public GetPlanDetailsInteractor(PlanGateway planGateway,
+    public GetPlanDetailsInteractor(PlanDataAccessInterface planDataAccessInterface,
                                     GetPlanDetailsOutputBoundary presenter) {
-        this.planGateway = planGateway;
+        this.planDataAccessInterface = planDataAccessInterface;
         this.presenter = presenter;
     }
 
@@ -43,7 +43,7 @@ public class GetPlanDetailsInteractor implements GetPlanDetailsInputBoundary {
     @Override
     public void execute(GetPlanDetailsInputData inputData) {
         try {
-            Plan plan = planGateway.findPlanWithStops(inputData.getPlanId());
+            Plan plan = planDataAccessInterface.findPlanWithStops(inputData.getPlanId());
 
             if (plan == null) {
                 presenter.present(new GetPlanDetailsOutputData(null, "Plan not found."));

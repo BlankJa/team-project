@@ -3,7 +3,7 @@ package placefinder.usecases.deleteplan;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import placefinder.usecases.ports.PlanGateway;
+import placefinder.usecases.dataacessinterfaces.PlanDataAccessInterface;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -19,7 +19,7 @@ import static org.mockito.Mockito.*;
  *
  * <p>Design notes:
  * <ul>
- *     <li>External collaborators ({@link PlanGateway} and
+ *     <li>External collaborators ({@link PlanDataAccessInterface} and
  *         {@link DeletePlanOutputBoundary}) are mocked.</li>
  *     <li>The interactor itself is treated as a pure application service:
  *         no database, UI, or framework concerns appear in these tests.</li>
@@ -32,7 +32,7 @@ class DeletePlanInteractorTest {
     // -------------------------------------------------------------------------
 
     /** Gateway abstraction used to perform the actual delete operation. */
-    private PlanGateway planGateway;
+    private PlanDataAccessInterface planDataAccessInterface;
 
     /** Presenter responsible for the turning output data into a view model. */
     private DeletePlanOutputBoundary presenter;
@@ -50,9 +50,9 @@ class DeletePlanInteractorTest {
      */
     @BeforeEach
     void setUp() {
-        planGateway = mock(PlanGateway.class);
+        planDataAccessInterface = mock(PlanDataAccessInterface.class);
         presenter   = mock(DeletePlanOutputBoundary.class);
-        interactor  = new DeletePlanInteractor(planGateway, presenter);
+        interactor  = new DeletePlanInteractor(planDataAccessInterface, presenter);
     }
 
     // -------------------------------------------------------------------------
@@ -80,7 +80,7 @@ class DeletePlanInteractorTest {
      * <p>When the gateway successfully deletes the plan (no exception thrown),
      * the interactor should:
      * <ul>
-     *     <li>Invoke {@link PlanGateway#deletePlan(int, int)} once with the
+     *     <li>Invoke {@link PlanDataAccessInterface#deletePlan(int, int)} once with the
      *         exact plan and user identifiers provided in the input.</li>
      *     <li>Notify the presenter with a successful {@link DeletePlanOutputData}
      *         instance and the message <em>"Plan deleted."</em>.</li>
@@ -99,7 +99,7 @@ class DeletePlanInteractorTest {
         interactor.execute(input);
 
         // Assert – the interactor must delegate to the gateway with the same ids
-        verify(planGateway).deletePlan(planId, userId);
+        verify(planDataAccessInterface).deletePlan(planId, userId);
 
         // And it must inform the presenter of success with the standard message
         DeletePlanOutputData out = capturePresenterOutput();
@@ -126,7 +126,7 @@ class DeletePlanInteractorTest {
         interactor.execute(input);
 
         // Assert – we expect a single call with the exact same arguments
-        verify(planGateway, times(1)).deletePlan(planId, userId);
+        verify(planDataAccessInterface, times(1)).deletePlan(planId, userId);
 
         DeletePlanOutputData out = capturePresenterOutput();
         assertTrue(out.isSuccess());
@@ -136,7 +136,7 @@ class DeletePlanInteractorTest {
     /**
      * Error-path scenario:
      *
-     * <p>If the {@link PlanGateway} throws an exception while trying to delete
+     * <p>If the {@link PlanDataAccessInterface} throws an exception while trying to delete
      * the plan, the interactor should:
      * <ul>
      *     <li>Catch the exception (rather than letting it propagate).</li>
@@ -156,13 +156,13 @@ class DeletePlanInteractorTest {
 
         // Simulate a persistence-layer failure
         doThrow(new Exception("Database unavailable"))
-                .when(planGateway).deletePlan(planId, userId);
+                .when(planDataAccessInterface).deletePlan(planId, userId);
 
         // Act
         interactor.execute(input);
 
         // Assert – gateway was still invoked exactly once with the same ids
-        verify(planGateway).deletePlan(planId, userId);
+        verify(planDataAccessInterface).deletePlan(planId, userId);
 
         // And the presenter must receive a failure result reflecting the error
         DeletePlanOutputData out = capturePresenterOutput();
@@ -186,7 +186,7 @@ class DeletePlanInteractorTest {
 
         // Exception with a null message
         Exception ex = new Exception((String) null);
-        doThrow(ex).when(planGateway).deletePlan(planId, userId);
+        doThrow(ex).when(planDataAccessInterface).deletePlan(planId, userId);
 
         // Act
         interactor.execute(input);

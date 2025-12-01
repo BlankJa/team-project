@@ -4,7 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import placefinder.entities.User;
-import placefinder.usecases.ports.UserGateway;
+import placefinder.usecases.dataacessinterfaces.UserDataAccessInterface;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -26,7 +26,7 @@ class VerifyEmailInteractorTest {
     // -------------------------------------------------------------------------
 
     /** Persistence port used by the interactor (mock). */
-    private UserGateway userGateway;
+    private UserDataAccessInterface userDataAccessInterface;
 
     /** Presenter / output boundary used by the interactor (mock). */
     private VerifyEmailOutputBoundary presenter;
@@ -40,9 +40,9 @@ class VerifyEmailInteractorTest {
 
     @BeforeEach
     void setUp() {
-        userGateway = mock(UserGateway.class);
+        userDataAccessInterface = mock(UserDataAccessInterface.class);
         presenter   = mock(VerifyEmailOutputBoundary.class);
-        interactor  = new VerifyEmailInteractor(userGateway, presenter);
+        interactor  = new VerifyEmailInteractor(userDataAccessInterface, presenter);
     }
 
     // -------------------------------------------------------------------------
@@ -82,7 +82,7 @@ class VerifyEmailInteractorTest {
         interactor.execute(input);
 
         // No persistence calls should be made on pure validation failure
-        verifyNoInteractions(userGateway);
+        verifyNoInteractions(userDataAccessInterface);
 
         VerifyEmailOutputData out = capturePresenterOutput();
         assertFalse(out.isSuccess());
@@ -106,7 +106,7 @@ class VerifyEmailInteractorTest {
 
         interactor.execute(input);
 
-        verifyNoInteractions(userGateway);
+        verifyNoInteractions(userDataAccessInterface);
 
         VerifyEmailOutputData out = capturePresenterOutput();
         assertFalse(out.isSuccess());
@@ -127,12 +127,12 @@ class VerifyEmailInteractorTest {
         VerifyEmailInputData input =
                 new VerifyEmailInputData("user@example.com", "123456");
 
-        when(userGateway.findByEmail("user@example.com")).thenReturn(null);
+        when(userDataAccessInterface.findByEmail("user@example.com")).thenReturn(null);
 
         interactor.execute(input);
 
-        verify(userGateway).findByEmail("user@example.com");
-        verify(userGateway, never()).save(any());
+        verify(userDataAccessInterface).findByEmail("user@example.com");
+        verify(userDataAccessInterface, never()).save(any());
 
         VerifyEmailOutputData out = capturePresenterOutput();
         assertFalse(out.isSuccess());
@@ -159,12 +159,12 @@ class VerifyEmailInteractorTest {
         VerifyEmailInputData input =
                 new VerifyEmailInputData("verified@example.com", "whatever");
 
-        when(userGateway.findByEmail("verified@example.com")).thenReturn(user);
+        when(userDataAccessInterface.findByEmail("verified@example.com")).thenReturn(user);
 
         interactor.execute(input);
 
-        verify(userGateway).findByEmail("verified@example.com");
-        verify(userGateway, never()).save(any());
+        verify(userDataAccessInterface).findByEmail("verified@example.com");
+        verify(userDataAccessInterface, never()).save(any());
 
         VerifyEmailOutputData out = capturePresenterOutput();
         assertTrue(out.isSuccess());
@@ -196,12 +196,12 @@ class VerifyEmailInteractorTest {
         VerifyEmailInputData input =
                 new VerifyEmailInputData("nullcode@example.com", "123456");
 
-        when(userGateway.findByEmail("nullcode@example.com")).thenReturn(user);
+        when(userDataAccessInterface.findByEmail("nullcode@example.com")).thenReturn(user);
 
         interactor.execute(input);
 
-        verify(userGateway).findByEmail("nullcode@example.com");
-        verify(userGateway, never()).save(any());
+        verify(userDataAccessInterface).findByEmail("nullcode@example.com");
+        verify(userDataAccessInterface, never()).save(any());
 
         VerifyEmailOutputData out = capturePresenterOutput();
         assertFalse(out.isSuccess());
@@ -233,12 +233,12 @@ class VerifyEmailInteractorTest {
         VerifyEmailInputData input =
                 new VerifyEmailInputData("user@example.com", "ENTERED-CODE");
 
-        when(userGateway.findByEmail("user@example.com")).thenReturn(user);
+        when(userDataAccessInterface.findByEmail("user@example.com")).thenReturn(user);
 
         interactor.execute(input);
 
-        verify(userGateway).findByEmail("user@example.com");
-        verify(userGateway, never()).save(any());
+        verify(userDataAccessInterface).findByEmail("user@example.com");
+        verify(userDataAccessInterface, never()).save(any());
 
         VerifyEmailOutputData out = capturePresenterOutput();
         assertFalse(out.isSuccess());
@@ -274,12 +274,12 @@ class VerifyEmailInteractorTest {
         VerifyEmailInputData input =
                 new VerifyEmailInputData("  user@example.com  ", " 123456 ");
 
-        when(userGateway.findByEmail("user@example.com")).thenReturn(user);
+        when(userDataAccessInterface.findByEmail("user@example.com")).thenReturn(user);
 
         interactor.execute(input);
 
-        verify(userGateway).findByEmail("user@example.com");
-        verify(userGateway).save(user);
+        verify(userDataAccessInterface).findByEmail("user@example.com");
+        verify(userDataAccessInterface).save(user);
 
         // Verify mutations on the entity
         assertTrue(user.isVerified());
@@ -306,13 +306,13 @@ class VerifyEmailInteractorTest {
         VerifyEmailInputData input =
                 new VerifyEmailInputData("boom@example.com", "999999");
 
-        when(userGateway.findByEmail("boom@example.com"))
+        when(userDataAccessInterface.findByEmail("boom@example.com"))
                 .thenThrow(new Exception("DB is down"));
 
         interactor.execute(input);
 
-        verify(userGateway).findByEmail("boom@example.com");
-        verify(userGateway, never()).save(any());
+        verify(userDataAccessInterface).findByEmail("boom@example.com");
+        verify(userDataAccessInterface, never()).save(any());
 
         VerifyEmailOutputData out = capturePresenterOutput();
         assertFalse(out.isSuccess());
@@ -335,7 +335,7 @@ class VerifyEmailInteractorTest {
         interactor.execute(input);
 
         // Gateway must not be called for invalid input
-        verifyNoInteractions(userGateway);
+        verifyNoInteractions(userDataAccessInterface);
 
         VerifyEmailOutputData out = capturePresenterOutput();
         assertFalse(out.isSuccess());
