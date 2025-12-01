@@ -1,35 +1,37 @@
 package placefinder.frameworks_drivers.view.frames;
 
 import placefinder.frameworks_drivers.view.components.swing.Button;
-import placefinder.frameworks_drivers.view.components.swing.MyTextField;
+import placefinder.frameworks_drivers.view.components.swing.MyTextFieldSecondary;
 import placefinder.frameworks_drivers.view.components.swing.PanelRound;
 import placefinder.entities.Plan;
 import placefinder.entities.PlanStop;
 import placefinder.entities.Place;
+import placefinder.entities.IndoorOutdoorType;
 import placefinder.interface_adapters.controllers.PlanCreationController;
+import placefinder.interface_adapters.controllers.WeatherAdviceController;
 import placefinder.interface_adapters.viewmodels.PlanCreationViewModel;
+import placefinder.interface_adapters.viewmodels.WeatherAdviceViewModel;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * UI panel for building a plan based on user selected preferences.
- */
 public class PlanBuilderPanel extends JPanel {
 
     private final AppFrame appFrame;
     private final PlanCreationController planCreationController;
     private final PlanCreationViewModel planCreationVM;
 
-    private MyTextField locationField;
-    private MyTextField dateField;
-    private MyTextField startTimeField;
+    // Reuse weather advice use case
+    private final WeatherAdviceController weatherAdviceController;
+    private final WeatherAdviceViewModel weatherAdviceVM;
+
+    private MyTextFieldSecondary locationField;
+    private MyTextFieldSecondary dateField;
+    private MyTextFieldSecondary startTimeField;
 
     private DefaultListModel<Place> recommendedModel;
     private JList<Place> recommendedList;
@@ -37,6 +39,7 @@ public class PlanBuilderPanel extends JPanel {
     private JList<Place> selectedList;
 
     private JTextArea planPreviewArea;
+    private JTextArea weatherAdviceArea;      // ← NEW: boxed advice area
     private JLabel infoLabel;
     private JLabel errorLabel;
 
@@ -44,23 +47,28 @@ public class PlanBuilderPanel extends JPanel {
 
     public PlanBuilderPanel(AppFrame appFrame,
                             PlanCreationController planCreationController,
-                            PlanCreationViewModel planCreationVM) {
+                            PlanCreationViewModel planCreationVM,
+                            WeatherAdviceController weatherAdviceController,
+                            WeatherAdviceViewModel weatherAdviceVM) {
         this.appFrame = appFrame;
         this.planCreationController = planCreationController;
         this.planCreationVM = planCreationVM;
+        this.weatherAdviceController = weatherAdviceController;
+        this.weatherAdviceVM = weatherAdviceVM;
         initUI();
     }
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        // gradient background
-        Graphics2D g2 = (Graphics2D) g.create();
-        Color top = new Color(243, 250, 255);
-        Color bottom = new Color(228, 238, 255);
-        g2.setPaint(new GradientPaint(0, 0, top, 0, getHeight(), bottom));
+        // Gradient background
+        Graphics2D g2 = (Graphics2D) g;
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        Color c1 = new Color(7, 164, 121);
+        Color c2 = new Color(0, 92, 75);
+        GradientPaint gp = new GradientPaint(0, 0, c1, getWidth(), getHeight(), c2);
+        g2.setPaint(gp);
         g2.fillRect(0, 0, getWidth(), getHeight());
-        g2.dispose();
     }
 
     private void initUI() {
@@ -76,7 +84,7 @@ public class PlanBuilderPanel extends JPanel {
         gbc.fill = GridBagConstraints.BOTH;
 
         PanelRound card = new PanelRound();
-        card.setBackground(new Color(250, 250, 250));
+        card.setBackground(new Color(234, 246, 234));
         card.setLayout(new BorderLayout(20, 20));
         card.setBorder(new EmptyBorder(20, 20, 20, 20));
         add(card, gbc);
@@ -86,11 +94,11 @@ public class PlanBuilderPanel extends JPanel {
         header.setOpaque(false);
 
         JLabel title = new JLabel("Build your day plan");
-        title.setFont(new Font("sansserif", Font.BOLD, 22));
+        title.setFont(new Font("sansserif", Font.BOLD, 28));
         title.setForeground(new Color(40, 40, 40));
 
         JLabel subtitle = new JLabel("Pick a location, date, and start time, then choose places for a one-day itinerary.");
-        subtitle.setFont(new Font("sansserif", Font.PLAIN, 13));
+        subtitle.setFont(new Font("sansserif", Font.PLAIN, 15));
         subtitle.setForeground(new Color(120, 120, 120));
 
         JPanel titleBox = new JPanel();
@@ -112,19 +120,19 @@ public class PlanBuilderPanel extends JPanel {
 
         tgc.gridx = 0;
         tgc.weightx = 0.4;
-        locationField = new MyTextField();
+        locationField = new MyTextFieldSecondary();
         locationField.setHint("Location (city or favorite)");
         top.add(locationField, tgc);
 
         tgc.gridx = 1;
         tgc.weightx = 0.25;
-        dateField = new MyTextField();
+        dateField = new MyTextFieldSecondary();
         dateField.setHint("Date (YYYY-MM-DD)");
         top.add(dateField, tgc);
 
         tgc.gridx = 2;
         tgc.weightx = 0.15;
-        startTimeField = new MyTextField();
+        startTimeField = new MyTextFieldSecondary();
         startTimeField.setHint("Start time (HH:MM)");
         top.add(startTimeField, tgc);
 
@@ -138,7 +146,7 @@ public class PlanBuilderPanel extends JPanel {
         searchButton.addActionListener(e -> searchPlaces());
         top.add(searchButton, tgc);
 
-        // ✅ combine header + search row in NORTH
+        // combine header + search row in NORTH
         JPanel northContainer = new JPanel(new BorderLayout());
         northContainer.setOpaque(false);
         northContainer.add(header, BorderLayout.NORTH);
@@ -230,12 +238,29 @@ public class PlanBuilderPanel extends JPanel {
         bottom.setOpaque(false);
         center.add(bottom, BorderLayout.SOUTH);
 
+        // Weather advice area (left box)
+        weatherAdviceArea = new JTextArea(6, 20);
+        weatherAdviceArea.setEditable(false);
+        weatherAdviceArea.setLineWrap(true);
+        weatherAdviceArea.setWrapStyleWord(true);
+        weatherAdviceArea.setFont(new Font("sansserif", Font.PLAIN, 12));
+        JScrollPane weatherScroll = new JScrollPane(weatherAdviceArea);
+        weatherScroll.setBorder(BorderFactory.createTitledBorder("Weather advice"));
+
+        // Plan preview area (right box)
         planPreviewArea = new JTextArea(6, 20);
         planPreviewArea.setEditable(false);
         planPreviewArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
         JScrollPane previewScroll = new JScrollPane(planPreviewArea);
         previewScroll.setBorder(BorderFactory.createTitledBorder("Plan preview"));
-        bottom.add(previewScroll, BorderLayout.CENTER);
+
+        // Put both boxes side-by-side
+        JPanel previewBoxes = new JPanel(new GridLayout(1, 2, 10, 0));
+        previewBoxes.setOpaque(false);
+        previewBoxes.add(weatherScroll);
+        previewBoxes.add(previewScroll);
+
+        bottom.add(previewBoxes, BorderLayout.CENTER);
 
         JPanel actions = new JPanel();
         actions.setOpaque(false);
@@ -294,7 +319,17 @@ public class PlanBuilderPanel extends JPanel {
                 JLabel lbl = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 if (value instanceof Place) {
                     Place place = (Place) value;
-                    lbl.setText(place.getName() + "  \u2013  " + place.getAddress());
+
+                    // Show (Indoor) / (Outdoor) / (Mixed)
+                    String typeText = "";
+                    IndoorOutdoorType type = place.getIndoorOutdoorType();
+                    if (type != null) {
+                        String pretty = type.name().toLowerCase().replace('_', ' ');
+                        pretty = Character.toUpperCase(pretty.charAt(0)) + pretty.substring(1);
+                        typeText = " (" + pretty + ")";
+                    }
+
+                    lbl.setText(place.getName() + typeText + "  \u2013  " + place.getAddress());
                 }
                 lbl.setBorder(new EmptyBorder(2, 4, 2, 4));
                 return lbl;
@@ -303,9 +338,11 @@ public class PlanBuilderPanel extends JPanel {
     }
 
     private void styleSecondaryButton(Button b) {
-        b.setBackground(new Color(245, 245, 245));
-        b.setForeground(new Color(70, 70, 70));
-        b.setFont(new Font("sansserif", Font.PLAIN, 12));
+        b.setBackground(new Color(7, 164, 121));
+        b.setForeground(Color.WHITE);
+        b.setFont(new Font("sansserif", Font.BOLD, 12));
+        b.setPreferredSize(new Dimension(180, 32));
+        b.setMaximumSize(new Dimension(180, 32));
     }
 
     // ===== API used from AppFrame =====
@@ -318,6 +355,7 @@ public class PlanBuilderPanel extends JPanel {
         recommendedModel.clear();
         selectedModel.clear();
         planPreviewArea.setText("");
+        weatherAdviceArea.setText("");
         infoLabel.setText(" ");
         errorLabel.setText(" ");
     }
@@ -371,6 +409,7 @@ public class PlanBuilderPanel extends JPanel {
             return;
         }
 
+        // 1) Get places
         planCreationController.searchPlaces(userId, loc, date);
         recommendedModel.clear();
         for (Place p : planCreationVM.getRecommendedPlaces()) {
@@ -381,6 +420,55 @@ public class PlanBuilderPanel extends JPanel {
             errorLabel.setText(planCreationVM.getErrorMessage());
         } else {
             errorLabel.setText(" ");
+        }
+
+        // 2) Get weather advice using the working WeatherAdvice use case
+        weatherAdviceController.getAdvice(loc, date);
+
+        String adviceText;
+        if (weatherAdviceVM.getErrorMessage() != null) {
+            adviceText = "Unable to retrieve weather advice: " + weatherAdviceVM.getErrorMessage();
+        } else {
+            String summary = weatherAdviceVM.getSummary();
+            String advice = weatherAdviceVM.getAdvice();
+            StringBuilder sb = new StringBuilder();
+            if (summary != null && !summary.isBlank()) {
+                sb.append(summary.trim()).append(" ");
+            }
+            if (advice != null && !advice.isBlank()) {
+                sb.append(advice.trim());
+            }
+            adviceText = sb.toString().trim();
+        }
+
+        // 3) Optionally append indoor/outdoor bias based on recommended places
+        int indoor = 0;
+        int outdoor = 0;
+        for (int i = 0; i < recommendedModel.size(); i++) {
+            Place p = recommendedModel.getElementAt(i);
+            if (p.getIndoorOutdoorType() == null) continue;
+            switch (p.getIndoorOutdoorType()) {
+                case INDOOR -> indoor++;
+                case OUTDOOR -> outdoor++;
+                default -> { /* MIXED or unknown */ }
+            }
+        }
+
+        if (indoor > outdoor) {
+            adviceText += (adviceText.isEmpty() ? "" : " ")
+                    + "We are favouring indoor locations based on the forecast.";
+        } else if (outdoor > indoor) {
+            adviceText += (adviceText.isEmpty() ? "" : " ")
+                    + "We are favouring outdoor locations based on the forecast.";
+        } else if (indoor + outdoor > 0) {
+            adviceText += (adviceText.isEmpty() ? "" : " ")
+                    + "You have a mix of indoor and outdoor locations.";
+        }
+
+        if (adviceText == null || adviceText.isBlank()) {
+            weatherAdviceArea.setText("");
+        } else {
+            weatherAdviceArea.setText(adviceText);
         }
     }
 

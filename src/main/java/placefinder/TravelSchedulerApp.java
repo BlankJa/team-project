@@ -5,17 +5,20 @@ import javax.swing.SwingUtilities;
 import placefinder.frameworks_drivers.database.Database;
 import placefinder.frameworks_drivers.database.SqliteUserGatewayImpl;
 import placefinder.frameworks_drivers.database.SqlitePreferenceGatewayImpl;
+import placefinder.frameworks_drivers.database.SqlitePlanGatewayImpl;
 import placefinder.frameworks_drivers.database.SmtpEmailGateway;
+
+import placefinder.frameworks_drivers.api.OpenCageGeocodingGateway;
+import placefinder.frameworks_drivers.api.GeoApifyPlacesGatewayImpl;
+import placefinder.frameworks_drivers.api.OpenMeteoWeatherGatewayImpl;
 
 import placefinder.usecases.ports.UserGateway;
 import placefinder.usecases.ports.PreferenceGateway;
-import placefinder.usecases.ports.EmailGateway;
+import placefinder.usecases.ports.PlanGateway;
+import placefinder.usecases.ports.GeocodingGateway;
 import placefinder.usecases.ports.PlacesGateway;
-
-import placefinder.frameworks_drivers.api.GeoapifyPlacesGateway;
-import placefinder.usecases.logging.PlacesApiLogger;
-import placefinder.usecases.logging.ConsolePlacesLogger;
-import placefinder.usecases.logging.InactivePlacesLogger;
+import placefinder.usecases.ports.WeatherGateway;
+import placefinder.usecases.ports.EmailGateway;
 
 // login & register
 import placefinder.usecases.login.*;
@@ -24,10 +27,24 @@ import placefinder.usecases.register.*;
 // preferences
 import placefinder.usecases.preferences.*;
 
+// search places + build/save plan
+import placefinder.usecases.searchplaces.*;
+import placefinder.usecases.buildplan.*;
+import placefinder.usecases.saveplan.*;
+
+// plans
+import placefinder.usecases.plans.*;
+import placefinder.usecases.getplandetails.*;
+import placefinder.usecases.deleteplan.*;
+import placefinder.usecases.listplans.*;
+
+// weather advice
+import placefinder.usecases.weatheradvice.*;
+
 // verify email
 import placefinder.usecases.verify.*;
 
-// controllers + viewmodels + presenters
+// interface adapters
 import placefinder.interface_adapters.controllers.*;
 import placefinder.interface_adapters.viewmodels.*;
 import placefinder.interface_adapters.presenters.*;
@@ -35,9 +52,6 @@ import placefinder.interface_adapters.presenters.*;
 // UI
 import placefinder.frameworks_drivers.view.frames.AppFrame;
 
-/**
- * Main application class for PlaceFinder / TravelScheduler.
- */
 public class TravelSchedulerApp {
 
     public static void main(String[] args) {
@@ -49,22 +63,15 @@ public class TravelSchedulerApp {
             e.printStackTrace();
         }
 
-        // ========== API DEBUG CONFIGURATION ==========
-        // CHANGE THIS TO true TO SEE API LOGS, false TO HIDE THEM
-        boolean debugApiCalls = true;  // <- Toggle logging here
-
-        PlacesApiLogger apiLogger = debugApiCalls
-                ? new ConsolePlacesLogger()   // Shows detailed API debug logs
-                : new InactivePlacesLogger();  // No logging (production mode)
-
-        System.out.println("API Debug Mode: " + (debugApiCalls ? "ON" : "OFF"));
-        // =============================================
-
         // ========== GATEWAYS (Frameworks & Drivers) ==========
         UserGateway userGateway = new SqliteUserGatewayImpl();
         PreferenceGateway preferenceGateway = new SqlitePreferenceGatewayImpl();
+        PlanGateway planGateway = new SqlitePlanGatewayImpl();
+        GeocodingGateway geocodingGateway = new OpenCageGeocodingGateway();
+        PlacesGateway placesGateway = new GeoApifyPlacesGatewayImpl();
+        WeatherGateway weatherGateway = new OpenMeteoWeatherGatewayImpl();
 
-        // Sender email account for verification codes
+        // Email gateway for registration / verification codes
         EmailGateway emailGateway = new SmtpEmailGateway(
                 "subhanakbar908@gmail.com",    // your Gmail address
                 "eqrsbydralnvylzm"              // your 16-char app password
@@ -75,15 +82,18 @@ public class TravelSchedulerApp {
                 "YOUR_GEOAPIFY_API_KEY_HERE",   // Get free key at Geoapify
                 apiLogger                       // Uses the logger configured above
         );
-        // (placesGateway is ready to be used by future use cases)
 
         // ========== VIEW MODELS ==========
         LoginViewModel loginVM = new LoginViewModel();
         RegisterViewModel registerVM = new RegisterViewModel();
         VerifyEmailViewModel verifyVM = new VerifyEmailViewModel();
         PreferencesViewModel preferencesVM = new PreferencesViewModel();
+        PlanCreationViewModel planCreationVM = new PlanCreationViewModel();
+        DashboardViewModel dashboardVM = new DashboardViewModel();
+        PlanDetailsViewModel planDetailsVM = new PlanDetailsViewModel();
+        WeatherAdviceViewModel weatherAdviceVM = new WeatherAdviceViewModel();
 
-        // ========== PRESENTERS, INTERACTORS, CONTROLLERS ==========
+        // ========== PRESENTERS & INTERACTORS & CONTROLLERS ==========
 
         // ---- Login ----
         LoginPresenter loginPresenter = new LoginPresenter(loginVM);
@@ -92,7 +102,7 @@ public class TravelSchedulerApp {
         LoginController loginController =
                 new LoginController(loginInteractor, loginVM);
 
-        // ---- Register (with email gateway) ----
+        // ---- Register (now uses EmailGateway) ----
         RegisterPresenter registerPresenter = new RegisterPresenter(registerVM);
         RegisterInputBoundary registerInteractor =
                 new RegisterInteractor(userGateway, registerPresenter, emailGateway);
@@ -106,19 +116,83 @@ public class TravelSchedulerApp {
         VerifyEmailController verifyController =
                 new VerifyEmailController(verifyInteractor, verifyVM);
 
-        // ---- Preferences (Get + Update via single presenter) ----
+        // ---- Preferences (Get / Update / Add / Delete Favorite) ----
         PreferencesPresenter preferencesPresenter = new PreferencesPresenter(preferencesVM);
 
         GetPreferencesInputBoundary getPrefsInteractor =
                 new GetPreferencesInteractor(preferenceGateway, preferencesPresenter);
         UpdatePreferencesInputBoundary updatePrefsInteractor =
                 new UpdatePreferencesInteractor(preferenceGateway, preferencesPresenter);
+        AddFavoriteInputBoundary addFavoriteInteractor =
+                new AddFavoriteInteractor(preferenceGateway, geocodingGateway, preferencesPresenter);
+        DeleteFavoriteInputBoundary deleteFavoriteInteractor =
+                new DeleteFavoriteInteractor(preferenceGateway, preferencesPresenter);
 
         PreferencesController preferencesController = new PreferencesController(
                 getPrefsInteractor,
                 updatePrefsInteractor,
+                addFavoriteInteractor,
+                deleteFavoriteInteractor,
                 preferencesVM
         );
+
+        // ---- Search Places / Build Plan / Save Plan ----
+        PlanCreationPresenter planCreationPresenter = new PlanCreationPresenter(planCreationVM);
+
+        SearchPlacesInputBoundary searchPlacesInteractor =
+                new SearchPlacesInteractor(
+                        preferenceGateway,
+                        geocodingGateway,
+                        placesGateway,
+                        weatherGateway,
+                        planCreationPresenter
+                );
+
+        BuildPlanInputBoundary buildPlanInteractor =
+                new BuildPlanInteractor(preferenceGateway, geocodingGateway, planCreationPresenter);
+
+        SavePlanInputBoundary savePlanInteractor =
+                new SavePlanInteractor(planGateway, planCreationPresenter);
+
+        PlanCreationController planCreationController = new PlanCreationController(
+                searchPlacesInteractor,
+                buildPlanInteractor,
+                savePlanInteractor,
+                planCreationVM
+        );
+
+        // ---- Plans Dashboard / Details / Delete / Apply Prefs ----
+        DashboardPresenter dashboardPresenter = new DashboardPresenter(dashboardVM, planDetailsVM);
+
+        ListPlansInputBoundary listPlansInteractor =
+                new ListPlansInteractor(planGateway, dashboardPresenter);
+        DeletePlanInputBoundary deletePlanInteractor =
+                new DeletePlanInteractor(planGateway, dashboardPresenter);
+        ApplyPreferencesFromPlanInputBoundary applyPrefsFromPlanInteractor =
+                new ApplyPreferencesFromPlanInteractor(
+                        planGateway,
+                        preferenceGateway,
+                        dashboardPresenter
+                );
+        GetPlanDetailsInputBoundary getPlanDetailsInteractor =
+                new GetPlanDetailsInteractor(planGateway, dashboardPresenter);
+
+        DashboardController dashboardController = new DashboardController(
+                listPlansInteractor,
+                deletePlanInteractor,
+                applyPrefsFromPlanInteractor,
+                getPlanDetailsInteractor,
+                dashboardVM,
+                planDetailsVM
+        );
+
+        // ---- Weather Advice ----
+        WeatherAdvicePresenter weatherAdvicePresenter = new WeatherAdvicePresenter(weatherAdviceVM);
+
+        WeatherAdviceInputBoundary weatherAdviceInteractor =
+                new WeatherAdviceInteractor(geocodingGateway, weatherGateway, weatherAdvicePresenter);
+        WeatherAdviceController weatherAdviceController =
+                new WeatherAdviceController(weatherAdviceInteractor, weatherAdviceVM);
 
         // ========== START UI ==========
         SwingUtilities.invokeLater(() -> {
@@ -127,10 +201,17 @@ public class TravelSchedulerApp {
                     registerController,
                     verifyController,
                     preferencesController,
+                    planCreationController,
+                    dashboardController,
+                    weatherAdviceController,
                     loginVM,
                     registerVM,
                     verifyVM,
-                    preferencesVM
+                    preferencesVM,
+                    planCreationVM,
+                    dashboardVM,
+                    planDetailsVM,
+                    weatherAdviceVM
             );
             frame.setVisible(true);
         });

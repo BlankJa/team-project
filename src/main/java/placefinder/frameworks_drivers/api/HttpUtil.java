@@ -24,23 +24,34 @@ public class HttpUtil {
         conn.setConnectTimeout(10000);
         conn.setReadTimeout(10000);
 
-        int responseCode = conn.getResponseCode();
-        if (responseCode != 200) {
-            throw new Exception("HTTP error code: " + responseCode);
+        int status = conn.getResponseCode();
+
+        InputStream is = (status >= 200 && status < 300)
+                ? conn.getInputStream()
+                : conn.getErrorStream();   // <– read error body if not 2xx
+
+        if (is == null) {
+            throw new IOException("No response from server, HTTP status " + status);
         }
 
         StringBuilder response = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                new InputStreamReader(is, StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 response.append(line);
             }
+        } finally {
+            conn.disconnect();
         }
 
-        conn.disconnect();
-        return response.toString();
+        if (status >= 200 && status < 300) {
+            return response.toString();
+        } else {
+            throw new IOException("HTTP " + status + ": " + response);
+        }
     }
+
 
     /**
      * Performs an HTTP POST request with the JSON input body to the specified URL.

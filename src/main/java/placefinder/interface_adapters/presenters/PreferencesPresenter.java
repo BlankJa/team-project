@@ -2,10 +2,7 @@ package placefinder.interface_adapters.presenters;
 
 import placefinder.entities.FavoriteLocation;
 import placefinder.interface_adapters.viewmodels.PreferencesViewModel;
-import placefinder.usecases.preferences.GetPreferencesOutputBoundary;
-import placefinder.usecases.preferences.GetPreferencesOutputData;
-import placefinder.usecases.preferences.UpdatePreferencesOutputBoundary;
-import placefinder.usecases.preferences.UpdatePreferencesOutputData;
+import placefinder.usecases.preferences.*;
 
 public class PreferencesPresenter implements GetPreferencesOutputBoundary,
         UpdatePreferencesOutputBoundary,

@@ -2,13 +2,20 @@ package placefinder.interface_adapters.presenters;
 
 import placefinder.interface_adapters.viewmodels.DashboardViewModel;
 import placefinder.interface_adapters.viewmodels.PlanDetailsViewModel;
+import placefinder.usecases.deleteplan.DeletePlanOutputBoundary;
+import placefinder.usecases.deleteplan.DeletePlanOutputData;
+import placefinder.usecases.getplandetails.GetPlanDetailsOutputBoundary;
+import placefinder.usecases.getplandetails.GetPlanDetailsOutputData;
+import placefinder.usecases.listplans.ListPlansOutputBoundary;
+import placefinder.usecases.listplans.ListPlansOutputData;
 import placefinder.usecases.plans.ApplyPreferencesFromPlanOutputBoundary;
 import placefinder.usecases.plans.ApplyPreferencesFromPlanOutputData;
+
 
 public class DashboardPresenter implements ListPlansOutputBoundary,
         DeletePlanOutputBoundary,
         ApplyPreferencesFromPlanOutputBoundary,
-        GetPlanDetailsOutputBoundary{
+        GetPlanDetailsOutputBoundary {
 
     private final DashboardViewModel dashboardViewModel;
     private final PlanDetailsViewModel planDetailsViewModel;

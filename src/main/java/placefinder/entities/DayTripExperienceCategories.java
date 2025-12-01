@@ -55,9 +55,7 @@ public class DayTripExperienceCategories {
                 "entertainment.culture",
                 "entertainment.culture.gallery",
                 "entertainment.culture.theatre",
-                "entertainment.culture.cinema",
                 "entertainment.culture.arts_centre",
-                "entertainment.culture.planetarium",
                 "commercial.art",
                 "commercial.antiques"
         ));

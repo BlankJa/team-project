@@ -16,13 +16,13 @@ public class Plan {
     private LocalDate date;
     private LocalTime startTime;
     private String originAddress;
-    private Route route;
+    private RouteOld route;
     private double snapshotRadiusKm;
     private Map<String, List<String>> snapshotCategories = new HashMap<>();
 
     public Plan(Integer id, int userId, String name,
                 LocalDate date, LocalTime startTime,
-                String originAddress, Route route,
+                String originAddress, RouteOld route,
                 double snapshotRadiusKm, Map<String, List<String>> snapshotCategories) {
         this.id = id;
         this.userId = userId;
@@ -55,8 +55,8 @@ public class Plan {
     public String getOriginAddress() { return originAddress; }
     public void setOriginAddress(String originAddress) { this.originAddress = originAddress; }
 
-    public Route getRoute() { return route; }
-    public void setRoute(Route route) { this.route = route; }
+    public RouteOld getRoute() { return route; }
+    public void setRoute(RouteOld route) { this.route = route; }
 
     public double getSnapshotRadiusKm() { return snapshotRadiusKm; }
     public void setSnapshotRadiusKm(double snapshotRadiusKm) { this.snapshotRadiusKm = snapshotRadiusKm; }

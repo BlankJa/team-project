@@ -60,7 +60,7 @@ public class BuildPlanInteractor implements BuildPlanInputBoundary {
                 current = end;
             }
 
-            Route route = new Route(stops);
+            RouteOld route = new RouteOld(stops);
             Plan plan = new Plan(
                     inputData.getExistingPlanId(),
                     inputData.getUserId(),
