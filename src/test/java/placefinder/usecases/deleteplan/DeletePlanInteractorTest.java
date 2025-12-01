@@ -34,7 +34,7 @@ class DeletePlanInteractorTest {
     /** Gateway abstraction used to perform the actual delete operation. */
     private PlanGateway planGateway;
 
-    /** Presenter responsible for turning output data into a view model. */
+    /** Presenter responsible for the turning output data into a view model. */
     private DeletePlanOutputBoundary presenter;
 
     /** System under test (SUT). */
