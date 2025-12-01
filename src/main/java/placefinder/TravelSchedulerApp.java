@@ -73,8 +73,14 @@ public class TravelSchedulerApp {
 
         // Email gateway for registration / verification codes
         EmailGateway emailGateway = new SmtpEmailGateway(
-                "subhan.akbar908@gmail.com",    // your Gmail
-                "eqrsbydralnvylzm"              // your app password
+                "subhanakbar908@gmail.com",    // your Gmail address
+                "eqrsbydralnvylzm"              // your 16-char app password
+        );
+
+        // Places API with optional debugging (configured above)
+        PlacesGateway placesGateway = new GeoapifyPlacesGateway(
+                "YOUR_GEOAPIFY_API_KEY_HERE",   // Get free key at Geoapify
+                apiLogger                       // Uses the logger configured above
         );
 
         // ========== VIEW MODELS ==========
