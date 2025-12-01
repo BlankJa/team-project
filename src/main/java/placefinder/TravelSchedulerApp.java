@@ -1,7 +1,11 @@
 package placefinder;
 
 import javax.swing.SwingUtilities;
-import javafx.application.Platform;
+
+// NOTE: JavaFX is still used in your UI layer (e.g., SplashScreen via JFXPanel).
+// We deliberately do NOT call Platform.startup(...) here to avoid thread issues.
+// JavaFX should be initialized inside components using JFXPanel + Platform.runLater
+// on the JavaFX Application Thread.
 
 import placefinder.frameworks_drivers.database.Database;
 import placefinder.frameworks_drivers.database.SqliteUserGatewayImpl;
@@ -57,14 +61,9 @@ import placefinder.frameworks_drivers.view.frames.SplashScreen;
 public class TravelSchedulerApp {
 
     public static void main(String[] args) {
-        // Initialize JavaFX platform (for video playback)
-        // JavaFX must be started before creating JFXPanel
-        try {
-            Platform.startup(() -> {});
-        } catch (IllegalStateException e) {
-            // JavaFX may already be started, ignore this exception
-            System.out.println("JavaFX platform already started");
-        }
+
+        // OPTIONAL: print Java version so you can confirm you're on 21
+        System.out.println("Java version = " + System.getProperty("java.version"));
 
         // Ensure database is initialized (triggers static init)
         try {
@@ -81,10 +80,8 @@ public class TravelSchedulerApp {
         PlacesGateway placesGateway = new GeoApifyPlacesGatewayImpl();
         WeatherGateway weatherGateway = new OpenMeteoWeatherGatewayImpl();
 
-        // Email gateway for registration / verification codes
         EmailGateway emailGateway = new SmtpEmailGateway(
-                "subhanakbar908@gmail.com",    // your Gmail address
-                "eqrsbydralnvylzm"              // your 16-char app password
+                "subhanakbar908@gmail.com","eqrsbydralnvylzm"
         );
 
         // ========== VIEW MODELS ==========
@@ -106,7 +103,7 @@ public class TravelSchedulerApp {
         LoginController loginController =
                 new LoginController(loginInteractor, loginVM);
 
-        // ---- Register (now uses EmailGateway) ----
+        // ---- Register (uses EmailGateway) ----
         RegisterPresenter registerPresenter = new RegisterPresenter(registerVM);
         RegisterInputBoundary registerInteractor =
                 new RegisterInteractor(userGateway, registerPresenter, emailGateway);
@@ -198,12 +195,10 @@ public class TravelSchedulerApp {
         WeatherAdviceController weatherAdviceController =
                 new WeatherAdviceController(weatherAdviceInteractor, weatherAdviceVM);
 
-        // ========== START UI ==========
+        // ========== START UI (Swing + JavaFX) ==========
         SwingUtilities.invokeLater(() -> {
-            // Create and show splash screen
             SplashScreen splash = new SplashScreen();
-            
-            // Initialize main window in background
+
             AppFrame frame = new AppFrame(
                     loginController,
                     registerController,
@@ -221,11 +216,9 @@ public class TravelSchedulerApp {
                     planDetailsVM,
                     weatherAdviceVM
             );
-            
+
             // Show splash screen, then show main window after it closes
-            splash.showSplash(() -> {
-                frame.setVisible(true);
-            });
+            splash.showSplash(() -> frame.setVisible(true));
         });
     }
 }
