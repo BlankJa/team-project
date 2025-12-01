@@ -8,7 +8,10 @@ import placefinder.interface_adapters.controllers.RegisterController;
 import placefinder.interface_adapters.controllers.VerifyEmailController;
 import placefinder.interface_adapters.controllers.PreferencesController;
 import placefinder.interface_adapters.controllers.PlanCreationController;
-import placefinder.interface_adapters.controllers.DashboardController;
+import placefinder.interface_adapters.controllers.ListPlansController;
+import placefinder.interface_adapters.controllers.DeletePlanController;
+import placefinder.interface_adapters.controllers.ApplyPreferencesFromPlanController;
+import placefinder.interface_adapters.controllers.GetPlanDetailsController;
 import placefinder.interface_adapters.controllers.WeatherAdviceController;
 
 // ViewModels
@@ -41,7 +44,10 @@ public class AppFrame extends JFrame {
     private final VerifyEmailController verifyEmailController;
     private final PreferencesController preferencesController;
     private final PlanCreationController planCreationController;
-    private final DashboardController dashboardController;
+    private final ListPlansController listPlansController;
+    private final DeletePlanController deletePlanController;
+    private final ApplyPreferencesFromPlanController applyPreferencesFromPlanController;
+    private final GetPlanDetailsController getPlanDetailsController;
     private final WeatherAdviceController weatherAdviceController;
 
     // ==== ViewModels ====
@@ -89,7 +95,10 @@ public class AppFrame extends JFrame {
             VerifyEmailController verifyEmailController,
             PreferencesController preferencesController,
             PlanCreationController planCreationController,
-            DashboardController dashboardController,
+            ListPlansController listPlansController,
+            DeletePlanController deletePlanController,
+            ApplyPreferencesFromPlanController applyPreferencesFromPlanController,
+            GetPlanDetailsController getPlanDetailsController,
             WeatherAdviceController weatherAdviceController,
             LoginViewModel loginVM,
             RegisterViewModel registerVM,
@@ -108,7 +117,10 @@ public class AppFrame extends JFrame {
         this.verifyEmailController  = verifyEmailController;
         this.preferencesController  = preferencesController;
         this.planCreationController = planCreationController;
-        this.dashboardController    = dashboardController;
+        this.listPlansController    = listPlansController;
+        this.deletePlanController   = deletePlanController;
+        this.applyPreferencesFromPlanController = applyPreferencesFromPlanController;
+        this.getPlanDetailsController = getPlanDetailsController;
         this.weatherAdviceController = weatherAdviceController;
 
         // ViewModels
@@ -149,7 +161,10 @@ public class AppFrame extends JFrame {
         // Dashboard
         dashboardPanel = new DashboardPanel(
                 this,
-                dashboardController,
+                listPlansController,
+                deletePlanController,
+                applyPreferencesFromPlanController,
+                getPlanDetailsController,
                 dashboardVM,
                 planDetailsVM
         );
@@ -179,7 +194,8 @@ public class AppFrame extends JFrame {
 
         // Plan details
         planDetailsPanel = new PlanDetailsPanel(
-                dashboardController,
+                deletePlanController,
+                applyPreferencesFromPlanController,
                 dashboardVM,
                 planDetailsVM,
                 this
