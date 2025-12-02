@@ -38,11 +38,28 @@ Core Features:
 
 - Route ordering + navigation logic for efficient travel
 
-| Team Member | Implemented Features                                                   |
-| ----------- | ---------------------------------------------------------------------- |
-| **Jacob**   | Login, registration, weather-based travel advice                       |
-| **Ariel Tantra** | Place recommendation based on user preferences + weather support       |
-| **John**    | Save plan feature & plan generation logic from user inputs             |
-| **Adam**    | API response cleanup and code optimization                             |
-| **Sean**    | Routing, trip sequencing, and navigation flow                          |
-| **Subhan**  | Email verification system, list plans, view plan details, delete plans |
+APIs Used:
+
+- Open-Meteo: Check Weather Condition with latitude and longtitude as an input.
+- Geoapify Places: Find places with specific categories within a certain radius.
+- Open Cage API: Returns a latitude and longtitude of an address (street number or even city).
+- Google Maps API: We use the routes API from the Google Maps API. It returns the directions for the plan.
+
+![Image showing APIs in use](src/main/resources/assets/APIs_in_use.png)
+
+App Screenshots:
+![Screenshot of application](src/main/resources/assets/PlaceFinder_screen_1.png)
+![Screenshot of application](src/main/resources/assets/PlaceFinder_screen_2.png)
+![Screenshot of application](src/main/resources/assets/PlaceFinder_screen_3.png)
+![Screenshot of application](src/main/resources/assets/PlaceFinder_screen_4.png)
+![Screenshot of application](src/main/resources/assets/PlaceFinder_screen_5.png)
+![Screenshot of application](src/main/resources/assets/PlaceFinder_screen_6.png)
+
+| Team Member | Implemented Features                                                    |
+| ----------- |-------------------------------------------------------------------------|
+| **Jacob**   | Login, registration, weather-based travel advice                        |
+| **Ariel Tantra** | Place recommendation based on user preferences + weather support   |
+| **John**    | Save plan feature & plan generation logic from user inputs              |
+| **Adam**    | Implements logging for Places API calls, including Quick Actions toggle |
+| **Sean**    | Routing, trip sequencing, and navigation flow                           |
+| **Subhan**  | Email verification system, list plans, view plan details, delete plans  |
