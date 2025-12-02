@@ -11,11 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -24,8 +20,12 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class SavePlanInteractorTest {
 
+    // =====================================================================
+    //  Success scenarios (various naming paths)
+    // =====================================================================
+
     /**
-     * Verifies that a valid plan with an explicit name is saved
+     * Verifies that a valid plan with an explicit non-blank name is saved
      * and that the presenter receives a successful result.
      */
     @Test
@@ -42,21 +42,24 @@ class SavePlanInteractorTest {
 
         interactor.execute(inputData);
 
+        // Plan should have been persisted once with the same instance.
         assertEquals(1, gateway.getSaveCallCount());
         assertSame(plan, gateway.getSavedPlan());
 
+        // Presenter should receive success output.
         final SavePlanOutputData output = presenter.getLastOutput();
         assertNotNull(output);
         assertTrue(output.isSuccess());
         assertEquals("Plan saved.", output.getMessage());
         assertSame(plan, output.getPlan());
 
+        // Name on the plan should be the explicit custom name.
         assertEquals("Custom trip name", plan.getName());
     }
 
     /**
-     * Verifies that a missing or blank name is replaced by the
-     * generated name using date and origin address.
+     * Verifies that a missing custom name (null) results in an automatically
+     * generated name based on the plan date and origin.
      */
     @Test
     void execute_generatesNameWhenMissing() throws Exception {
@@ -65,6 +68,7 @@ class SavePlanInteractorTest {
         final SavePlanInteractor interactor = new SavePlanInteractor(gateway, presenter);
 
         final Plan plan = buildValidPlan();
+        // Existing internal name will be overridden.
         plan.setName(null);
 
         final SavePlanInputData inputData =
@@ -75,8 +79,47 @@ class SavePlanInteractorTest {
 
         interactor.execute(inputData);
 
+        // Plan should be saved.
         assertEquals(1, gateway.getSaveCallCount());
         assertSame(plan, gateway.getSavedPlan());
+
+        // Name should be generated.
+        assertEquals(expectedName, plan.getName());
+
+        // Presenter should receive success.
+        final SavePlanOutputData output = presenter.getLastOutput();
+        assertNotNull(output);
+        assertTrue(output.isSuccess());
+        assertEquals("Plan saved.", output.getMessage());
+        assertSame(plan, output.getPlan());
+    }
+
+    /**
+     * Verifies that a custom name that is non-null but blank is treated as
+     * missing and replaced by the generated name.
+     */
+    @Test
+    void execute_generatesNameWhenExplicitNameBlank() throws Exception {
+        final InMemoryPlanGateway gateway = new InMemoryPlanGateway();
+        final CapturingSavePlanPresenter presenter = new CapturingSavePlanPresenter();
+        final SavePlanInteractor interactor = new SavePlanInteractor(gateway, presenter);
+
+        final Plan plan = buildValidPlan();
+        plan.setName("Original name");
+
+        final SavePlanInputData inputData =
+                new SavePlanInputData(plan, "   "); // blank but non-null
+
+        final String expectedName = "Plan - " + plan.getDate()
+                + " - " + plan.getOriginAddress();
+
+        interactor.execute(inputData);
+
+        // Persisted once.
+        assertEquals(1, gateway.getSaveCallCount());
+        assertSame(plan, gateway.getSavedPlan());
+
+        // Name should be generated, not kept as blank.
         assertEquals(expectedName, plan.getName());
 
         final SavePlanOutputData output = presenter.getLastOutput();
@@ -85,6 +128,46 @@ class SavePlanInteractorTest {
         assertEquals("Plan saved.", output.getMessage());
         assertSame(plan, output.getPlan());
     }
+
+    /**
+     * Verifies the case where the plan's current name is blank and no custom
+     * name is provided; the interactor should still generate a default name.
+     */
+    @Test
+    void execute_generatesNameWhenExistingNameBlankAndNoCustomName() throws Exception {
+        final InMemoryPlanGateway gateway = new InMemoryPlanGateway();
+        final CapturingSavePlanPresenter presenter = new CapturingSavePlanPresenter();
+        final SavePlanInteractor interactor = new SavePlanInteractor(gateway, presenter);
+
+        final Plan plan = buildValidPlan();
+        // Existing name is blank.
+        plan.setName("   ");
+
+        final SavePlanInputData inputData =
+                new SavePlanInputData(plan, null);
+
+        final String expectedName = "Plan - " + plan.getDate()
+                + " - " + plan.getOriginAddress();
+
+        interactor.execute(inputData);
+
+        // Plan should be saved.
+        assertEquals(1, gateway.getSaveCallCount());
+        assertSame(plan, gateway.getSavedPlan());
+
+        // Name should be generated.
+        assertEquals(expectedName, plan.getName());
+
+        final SavePlanOutputData output = presenter.getLastOutput();
+        assertNotNull(output);
+        assertTrue(output.isSuccess());
+        assertEquals("Plan saved.", output.getMessage());
+        assertSame(plan, output.getPlan());
+    }
+
+    // =====================================================================
+    //  Validation failures
+    // =====================================================================
 
     /**
      * When the plan is {@code null}, no persistence call is made
@@ -101,6 +184,7 @@ class SavePlanInteractorTest {
 
         interactor.execute(inputData);
 
+        // No save should occur.
         assertEquals(0, gateway.getSaveCallCount());
 
         final SavePlanOutputData output = presenter.getLastOutput();
@@ -128,6 +212,7 @@ class SavePlanInteractorTest {
 
         interactor.execute(inputData);
 
+        // No save should occur.
         assertEquals(0, gateway.getSaveCallCount());
 
         final SavePlanOutputData output = presenter.getLastOutput();
@@ -138,7 +223,7 @@ class SavePlanInteractorTest {
     }
 
     /**
-     * When the route contains no stops, saving is rejected and
+     * When the route contains an empty list of stops, saving is rejected and
      * the presenter receives a failure result.
      */
     @Test
@@ -158,6 +243,7 @@ class SavePlanInteractorTest {
 
         interactor.execute(inputData);
 
+        // No save should occur.
         assertEquals(0, gateway.getSaveCallCount());
 
         final SavePlanOutputData output = presenter.getLastOutput();
@@ -166,6 +252,43 @@ class SavePlanInteractorTest {
         assertEquals("No plan to save. Please generate a plan first.", output.getMessage());
         assertNull(output.getPlan());
     }
+
+    /**
+     * When the route has a {@code null} stops list, the "stops == null"
+     * branch in the validation should be taken, and saving should be rejected.
+     * This test is specifically here to exercise that branch for coverage.
+     */
+    @Test
+    void execute_failsWhenRouteHasNullStopsList() throws Exception {
+        final InMemoryPlanGateway gateway = new InMemoryPlanGateway();
+        final CapturingSavePlanPresenter presenter = new CapturingSavePlanPresenter();
+        final SavePlanInteractor interactor = new SavePlanInteractor(gateway, presenter);
+
+        final Plan plan = buildValidPlan();
+
+        // Create a Route whose stops list is null; other fields can be anything.
+        final Route nullStopsRoute =
+                new Route(null, Collections.emptyList(), 0, 0.0, null);
+        plan.setRoute(nullStopsRoute);
+
+        final SavePlanInputData inputData =
+                new SavePlanInputData(plan, "Name");
+
+        interactor.execute(inputData);
+
+        // No save should occur.
+        assertEquals(0, gateway.getSaveCallCount());
+
+        final SavePlanOutputData output = presenter.getLastOutput();
+        assertNotNull(output);
+        assertFalse(output.isSuccess());
+        assertEquals("No plan to save. Please generate a plan first.", output.getMessage());
+        assertNull(output.getPlan());
+    }
+
+    // =====================================================================
+    //  Exception handling
+    // =====================================================================
 
     /**
      * Verifies that a persistence exception is caught and converted
@@ -189,6 +312,10 @@ class SavePlanInteractorTest {
         assertEquals("Simulated failure", output.getMessage());
         assertNull(output.getPlan());
     }
+
+    // =====================================================================
+    //  Helpers and test doubles
+    // =====================================================================
 
     /**
      * Builds a minimal valid {@link Plan} instance with a date,
@@ -218,8 +345,8 @@ class SavePlanInteractorTest {
         snapshotCategories.put("museum", Collections.singletonList("art"));
 
         return new Plan(
-                null,
-                1,
+                null,          // id
+                1,             // userId
                 "Initial name",
                 date,
                 startTime,
