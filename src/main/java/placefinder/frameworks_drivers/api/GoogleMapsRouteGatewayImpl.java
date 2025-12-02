@@ -23,7 +23,7 @@ public class GoogleMapsRouteGatewayImpl implements RouteDataAccessInterface {
     }
 
     @Override
-    public Route computeRoute(GeocodeResult origin, LocalTime startTime, List<PlanStop> stops) throws Exception {
+    public Route computeRoute(GeocodeResult origin, LocalTime startTime, List<Place> places) throws Exception {
         PlanStop originStop = new PlanStop(0, new Place(), startTime, startTime);
 
         // building input url
@@ -36,8 +36,8 @@ public class GoogleMapsRouteGatewayImpl implements RouteDataAccessInterface {
         inputJson.add("destination", start);
 
         JsonArray intermediates = new JsonArray();
-        for  (PlanStop stop : stops) {
-            intermediates.add(stopToWaypoint(stop));
+        for  (Place place : places) {
+            intermediates.add(placeToWaypoint(place));
         }
         inputJson.add("intermediates", intermediates);
 
@@ -58,13 +58,14 @@ public class GoogleMapsRouteGatewayImpl implements RouteDataAccessInterface {
         JsonArray orderJson = routeObj.getAsJsonArray("optimizedIntermediateWaypointIndex");
 
         // optimized order of stops
-        List<PlanStop> order = new ArrayList<>();
+        List<Place> order = new ArrayList<>();
         for (JsonElement element : orderJson) {
-            order.add(stops.get(element.getAsInt()));
+            order.add(places.get(element.getAsInt()));
         }
 
         // creating list of legs for the route
         List<Leg> legs = new ArrayList<>();
+        List<PlanStop> routeStops= new ArrayList<>();
         for (int legNum = 0; legNum < routeObj.getAsJsonArray("legs").size(); legNum++) {
             JsonObject legObj = routeObj.getAsJsonArray("legs").get(legNum).getAsJsonObject();
 
@@ -80,25 +81,38 @@ public class GoogleMapsRouteGatewayImpl implements RouteDataAccessInterface {
                 steps.add(step);
             }
 
+            double legDuration = Double.parseDouble(legObj.getAsJsonPrimitive("duration").getAsString()
+                    .replace("s", ""));
             // creating new Leg object and adding to list
             // first leg
             if (legNum == 0) {
-                Leg leg = createLeg(legObj, originStop, order.get(legNum), steps);
+                PlanStop firstStop = new PlanStop(legNum,
+                        order.get(legNum),
+                        startTime.plusSeconds((long) legDuration),
+                        startTime.plusSeconds((long) legDuration).plusHours(1));
+                Leg leg = createLeg(legObj, legDuration, originStop, firstStop, steps);
+                routeStops.add(firstStop);
                 legs.add(leg);
             }
             // last leg
             else if (legNum == routeObj.getAsJsonArray("legs").size() - 1) {
-                Leg leg = createLeg(legObj, order.get(legNum), originStop, steps);
+                Leg leg = createLeg(legObj, legDuration, legs.get(legNum - 1).getEndLocation(), originStop, steps);
                 legs.add(leg);
             }
             else {
-                Leg leg = createLeg(legObj, order.get(legNum), order.get(legNum + 1), steps);
+                PlanStop lastStop = legs.get(legNum - 1).getEndLocation();
+                PlanStop nextStop = new PlanStop(legNum,
+                        order.get(legNum),
+                        lastStop.getEndTime().plusSeconds((long) legDuration),
+                        lastStop.getEndTime().plusSeconds((long) legDuration).plusHours(1));
+                Leg leg = createLeg(legObj, legDuration, lastStop, nextStop, steps);
+                routeStops.add(nextStop);
                 legs.add(leg);
             }
         }
 
         // creating route
-        return new Route(order,
+        return new Route(routeStops,
                 legs,
                 routeObj.getAsJsonPrimitive("distanceMeters").getAsInt(),
                 Double.parseDouble(routeObj.getAsJsonPrimitive("duration")
@@ -107,10 +121,9 @@ public class GoogleMapsRouteGatewayImpl implements RouteDataAccessInterface {
                         .getAsJsonPrimitive("encodedPolyline").getAsString());
     }
 
-    private static Leg createLeg(JsonObject legObj, PlanStop start, PlanStop end, List<Step> steps) {
+    private static Leg createLeg(JsonObject legObj, double duration, PlanStop start, PlanStop end, List<Step> steps) {
         return new Leg(legObj.getAsJsonPrimitive("distanceMeters").getAsInt(),
-                Double.parseDouble(legObj.getAsJsonPrimitive("duration").getAsString()
-                        .replace("s", "")),
+                duration,
                 legObj.getAsJsonObject("polyline").getAsJsonPrimitive("encodedPolyline")
                         .getAsString(),
                 start,
@@ -118,7 +131,7 @@ public class GoogleMapsRouteGatewayImpl implements RouteDataAccessInterface {
                 steps);
     }
 
-    private JsonObject stopToWaypoint(PlanStop stop){
+    private JsonObject placeToWaypoint(Place place){
         JsonObject waypoint = new JsonObject();
 
         waypoint.addProperty("via", false);
@@ -128,8 +141,8 @@ public class GoogleMapsRouteGatewayImpl implements RouteDataAccessInterface {
         JsonObject location = new JsonObject();
 
         JsonObject latLng = new JsonObject();
-        latLng.addProperty("latitude", stop.getPlace().getLat());
-        latLng.addProperty("longitude", stop.getPlace().getLon());
+        latLng.addProperty("latitude", place.getLat());
+        latLng.addProperty("longitude", place.getLon());
 
         location.add("latLng", latLng);
         location.addProperty("heading", 0);
