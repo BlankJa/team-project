@@ -1,5 +1,7 @@
 package placefinder.frameworks_drivers.view.frames;
 
+import placefinder.entities.Leg;
+import placefinder.entities.Step;
 import placefinder.frameworks_drivers.view.components.swing.Button;
 import placefinder.frameworks_drivers.view.components.swing.PanelRound;
 import placefinder.entities.Plan;
@@ -31,6 +33,7 @@ public class PlanDetailsPanel extends JPanel {
     private JLabel locationLabel;
     private JLabel prefsLabel;
     private JTextArea timelineArea;
+    private JTextArea directionsArea;
 
     private Plan currentPlan;
 
@@ -168,6 +171,22 @@ public class PlanDetailsPanel extends JPanel {
         scroll.setBorder(BorderFactory.createEmptyBorder());
         timelineCard.add(scroll, BorderLayout.CENTER);
 
+        JLabel directionsLabel = new JLabel("Directions");
+        directionsLabel.setFont(new Font("sansserif", Font.BOLD, 14));
+        directionsLabel.setForeground(new Color(60, 60, 60));
+
+        directionsArea = new JTextArea(8, 40);
+        directionsArea.setEditable(false);
+        directionsArea.setFont(new Font("monospaced", Font.PLAIN, 12));
+        JScrollPane dirScroll = new JScrollPane(directionsArea);
+        dirScroll.setBorder(BorderFactory.createEmptyBorder());
+
+        JPanel directionsPanel = new JPanel(new BorderLayout());
+        directionsPanel.setOpaque(false);
+        directionsPanel.add(directionsLabel, BorderLayout.NORTH);
+        directionsPanel.add(dirScroll, BorderLayout.CENTER);
+
+        timelineCard.add(directionsPanel, BorderLayout.SOUTH);
         center.add(timelineCard, BorderLayout.CENTER);
 
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
@@ -250,6 +269,39 @@ public class PlanDetailsPanel extends JPanel {
             }
         }
         timelineArea.setText(sb.toString());
+
+        StringBuilder directions = new StringBuilder();
+        if (currentPlan.getRoute() != null &&
+                currentPlan.getRoute().getLegs() != null) {
+
+            for (Leg leg : currentPlan.getRoute().getLegs()) {
+                // Identify the start and end of this leg
+                PlanStop start = leg.getStartLocation();
+                PlanStop end   = leg.getEndLocation();
+
+                directions.append("From ")
+                        .append(start != null ? start.getPlace().getName() : "Start")
+                        .append(" to ")
+                        .append(end != null ? end.getPlace().getName() : "Next")
+                        .append(":\n");
+
+                for (Step step : leg.getSteps()) {
+                    // Strip any HTML tags from the instruction, if present
+                    String instruction = step.getNavInstruction()
+                            .replaceAll("<[^>]*>", "");
+                    directions.append("  • ")
+                            .append(instruction)
+                            .append(" (")
+                            .append(step.getDistance())
+                            .append("m, ")
+                            .append(String.format("%.1f min",
+                                    step.getDuration() / 60.0))
+                            .append(")\n");
+                }
+                directions.append("\n");
+            }
+        }
+        directionsArea.setText(directions.toString());
     }
 
     private void editCurrentPlan() {

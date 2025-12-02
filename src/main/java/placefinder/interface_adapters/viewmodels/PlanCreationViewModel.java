@@ -16,7 +16,6 @@ public class PlanCreationViewModel {
     private String weatherAdvice;
 
     private Plan planPreview;
-    private boolean planTruncated;
     private Plan lastSavedPlan;
 
     private String infoMessage;
@@ -53,14 +52,6 @@ public class PlanCreationViewModel {
 
     public void setPlanPreview(Plan planPreview) {
         this.planPreview = planPreview;
-    }
-
-    public boolean isPlanTruncated() {
-        return planTruncated;
-    }
-
-    public void setPlanTruncated(boolean planTruncated) {
-        this.planTruncated = planTruncated;
     }
 
     public Plan getLastSavedPlan() {

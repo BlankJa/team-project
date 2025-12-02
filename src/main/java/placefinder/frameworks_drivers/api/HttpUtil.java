@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 /**
  * Utility class for making HTTP requests.
@@ -55,13 +56,31 @@ public class HttpUtil {
 
     /**
      * Performs an HTTP POST request with the JSON input body to the specified URL.
+     * This calls the overloaded method with no extra headers.
      *
      * @param urlString The URL to request
-     * @param body The JSON input body
+     * @param body      The JSON input body
      * @return The response body as a String
      * @throws IOException if the request fails
      */
     public static String post(String urlString, String body) throws IOException {
+        return post(urlString, body, null);
+    }
+
+    /**
+     * Performs an HTTP POST request with the JSON input body to the specified URL and
+     * allows callers to pass additional headers.  When {@code extraHeaders} is null or empty,
+     * the default headers of Accept and Content‑Type will be used.  Any headers
+     * specified in {@code extraHeaders} override the default ones or add new entries.
+     *
+     * @param urlString    The URL to request
+     * @param body         The JSON input body
+     * @param extraHeaders Optional map of header names to values to include in the request
+     * @return The response body as a String
+     * @throws IOException if the request fails
+     */
+    public static String post(String urlString, String body,
+                              Map<String, String> extraHeaders) throws IOException {
         HttpURLConnection conn = null;
         try {
             URL url = new URL(urlString);
@@ -71,9 +90,17 @@ public class HttpUtil {
             conn.setReadTimeout(15000);
             conn.setDoOutput(true);
 
+            // Set baseline headers; values can be overridden by extraHeaders
             conn.setRequestProperty("User-Agent", "PlaceFinder/1.0");
             conn.setRequestProperty("Accept", "application/json");
             conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+
+            // Apply any user‑provided headers, overriding defaults if necessary
+            if (extraHeaders != null) {
+                for (Map.Entry<String, String> entry : extraHeaders.entrySet()) {
+                    conn.setRequestProperty(entry.getKey(), entry.getValue());
+                }
+            }
 
             // Write request body
             try (OutputStream os = conn.getOutputStream()) {

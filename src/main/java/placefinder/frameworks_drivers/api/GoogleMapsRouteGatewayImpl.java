@@ -7,9 +7,13 @@ import com.google.gson.JsonParser;
 import placefinder.entities.*;
 import placefinder.usecases.dataacessinterfaces.RouteDataAccessInterface;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class GoogleMapsRouteGatewayImpl implements RouteDataAccessInterface {
     private final String apiKey;
@@ -26,8 +30,15 @@ public class GoogleMapsRouteGatewayImpl implements RouteDataAccessInterface {
     public Route computeRoute(GeocodeResult origin, LocalTime startTime, List<Place> places) throws Exception {
         PlanStop originStop = new PlanStop(0, new Place(), startTime, startTime);
 
-        // building input url
-        String url = "https://routes.googleapis.com/directions/v2:computeRoutes?$fields=routes$key=" + apiKey;
+        String fieldMask = "*";
+        String url = "https://routes.googleapis.com/directions/v2:computeRoutes"
+                + "?key=" + apiKey
+                + "&fields=" + fieldMask;
+
+        // Prepare extra headers: set the key and field mask again
+        Map<String,String> headers = new HashMap<>();
+        headers.put("X-Goog-Api-Key", apiKey);
+        headers.put("X-Goog-FieldMask", fieldMask);
 
         // building input Json body
         JsonObject inputJson = new JsonObject();
@@ -45,7 +56,7 @@ public class GoogleMapsRouteGatewayImpl implements RouteDataAccessInterface {
         inputJson.addProperty("optimizeWaypointOrder", true);
 
         // calling API
-        String json = HttpUtil.post(url, inputJson.toString());
+        String json = HttpUtil.post(url, inputJson.toString(), headers);
 
         // getting output
         JsonObject root = JsonParser.parseString(json).getAsJsonObject();
@@ -74,11 +85,21 @@ public class GoogleMapsRouteGatewayImpl implements RouteDataAccessInterface {
             for (int stepNum = 0; stepNum < legObj.getAsJsonArray("steps").size(); stepNum++) {
                 JsonObject stepObj = legObj.getAsJsonArray("steps").get(stepNum).getAsJsonObject();
                 JsonObject navInst = stepObj.getAsJsonObject("navigationInstruction");
-                Step step = new Step (stepObj.getAsJsonPrimitive("distanceMeters").getAsInt(),
-                        Double.parseDouble(stepObj.getAsJsonPrimitive("staticDuration")
-                                .getAsString().replace("s", "")),
-                        navInst.getAsJsonPrimitive("instructions").getAsString());
-                steps.add(step);
+                if (navInst == null) {
+                    Step step = new Step (stepObj.getAsJsonPrimitive("distanceMeters").getAsInt(),
+                            Double.parseDouble(stepObj.getAsJsonPrimitive("staticDuration")
+                                    .getAsString().replace("s", "")),
+                            "Instruction unavailable.");
+                    steps.add(step);
+                }
+                else{
+                    Step step = new Step (stepObj.getAsJsonPrimitive("distanceMeters").getAsInt(),
+                            Double.parseDouble(stepObj.getAsJsonPrimitive("staticDuration")
+                                    .getAsString().replace("s", "")),
+                            navInst.getAsJsonPrimitive("instructions").getAsString());
+                    steps.add(step);
+                }
+
             }
 
             double legDuration = Double.parseDouble(legObj.getAsJsonPrimitive("duration").getAsString()

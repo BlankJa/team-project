@@ -22,10 +22,15 @@ public class SqlitePlanDataAccess implements PlanDataAccessInterface {
         } else {
             updatePlan(plan);
         }
-        // stops
         deleteStopsForPlan(plan.getId());
         insertStops(plan);
+
+        // remove and re‑insert route data
+        deleteRouteForPlan(plan.getId());
+        insertRoute(plan);
     }
+
+
 
     private void insertPlan(Plan plan) throws Exception {
         String sql = "INSERT INTO plans(user_id, name, date, start_time, origin_address, " +
@@ -47,6 +52,136 @@ public class SqlitePlanDataAccess implements PlanDataAccessInterface {
             }
         }
     }
+
+    private void deleteRouteForPlan(Integer planId) throws Exception {
+        if (planId == null) return;
+        try (Connection conn = Database.getConnection()) {
+            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM plan_steps WHERE plan_id = ?")) {
+                ps.setInt(1, planId);
+                ps.executeUpdate();
+            }
+            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM plan_legs WHERE plan_id = ?")) {
+                ps.setInt(1, planId);
+                ps.executeUpdate();
+            }
+            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM plan_routes WHERE plan_id = ?")) {
+                ps.setInt(1, planId);
+                ps.executeUpdate();
+            }
+        }
+    }
+
+    private void insertRoute(Plan plan) throws Exception {
+        Route route = plan.getRoute();
+        if (route == null || route.getStops() == null) return;
+        try (Connection conn = Database.getConnection()) {
+            // insert plan_routes row
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "INSERT INTO plan_routes(plan_id,distance,duration,encoded_polyline) VALUES(?,?,?,?)")) {
+                ps.setInt(1, plan.getId());
+                ps.setInt(2, route.getDistance());
+                ps.setDouble(3, route.getDuration());
+                ps.setString(4, route.getEncodedPolyline());
+                ps.executeUpdate();
+            }
+            // insert plan_legs rows
+            List<Leg> legs = route.getLegs();
+            if (legs != null && !legs.isEmpty()) {
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "INSERT INTO plan_legs(plan_id,leg_index,distance,duration,encoded_polyline,start_seq,end_seq) VALUES(?,?,?,?,?,?,?)")) {
+                    for (int i = 0; i < legs.size(); i++) {
+                        Leg leg = legs.get(i);
+                        ps.setInt(1, plan.getId());
+                        ps.setInt(2, i);
+                        ps.setInt(3, leg.getDistance());
+                        ps.setDouble(4, leg.getDuration());
+                        ps.setString(5, leg.getEncodedPolyline());
+                        ps.setInt(6, leg.getStartLocation().getSequenceNumber());
+                        ps.setInt(7, leg.getEndLocation().getSequenceNumber());
+                        ps.addBatch();
+                    }
+                    ps.executeBatch();
+                }
+                // insert plan_steps rows
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "INSERT INTO plan_steps(plan_id,leg_index,step_index,distance,duration,nav_instruction) VALUES(?,?,?,?,?,?)")) {
+                    for (int i = 0; i < legs.size(); i++) {
+                        Leg leg = legs.get(i);
+                        List<Step> steps = leg.getSteps();
+                        if (steps == null) continue;
+                        for (int j = 0; j < steps.size(); j++) {
+                            Step step = steps.get(j);
+                            ps.setInt(1, plan.getId());
+                            ps.setInt(2, i);
+                            ps.setInt(3, j);
+                            ps.setInt(4, step.getDistance());
+                            ps.setDouble(5, step.getDuration());
+                            ps.setString(6, step.getNavInstruction());
+                            ps.addBatch();
+                        }
+                    }
+                    ps.executeBatch();
+                }
+            }
+        }
+    }
+
+    private Route loadRouteForPlan(Connection conn, int planId, List<PlanStop> stops) throws Exception {
+        // read plan_routes; if none found, return null
+        int routeDistance = 0;
+        double routeDuration = 0.0;
+        String routePolyline = null;
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT distance,duration,encoded_polyline FROM plan_routes WHERE plan_id = ?")) {
+            ps.setInt(1, planId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    routeDistance = rs.getInt("distance");
+                    routeDuration = rs.getDouble("duration");
+                    routePolyline = rs.getString("encoded_polyline");
+                } else {
+                    return null;
+                }
+            }
+        }
+        // map sequence numbers to PlanStop objects
+        Map<Integer, PlanStop> stopMap = new HashMap<>();
+        for (PlanStop s : stops) stopMap.put(s.getSequenceNumber(), s);
+        List<Leg> legs = new ArrayList<>();
+        try (PreparedStatement psLeg = conn.prepareStatement(
+                "SELECT leg_index,distance,duration,encoded_polyline,start_seq,end_seq FROM plan_legs WHERE plan_id = ? ORDER BY leg_index")) {
+            psLeg.setInt(1, planId);
+            try (ResultSet rsLeg = psLeg.executeQuery()) {
+                while (rsLeg.next()) {
+                    int legIndex = rsLeg.getInt("leg_index");
+                    int legDist = rsLeg.getInt("distance");
+                    double legDur = rsLeg.getDouble("duration");
+                    String legPoly = rsLeg.getString("encoded_polyline");
+                    int startSeq = rsLeg.getInt("start_seq");
+                    int endSeq = rsLeg.getInt("end_seq");
+                    PlanStop startStop = stopMap.get(startSeq);
+                    PlanStop endStop = stopMap.get(endSeq);
+                    List<Step> stepList = new ArrayList<>();
+                    try (PreparedStatement psStep = conn.prepareStatement(
+                            "SELECT distance,duration,nav_instruction FROM plan_steps WHERE plan_id = ? AND leg_index = ? ORDER BY step_index")) {
+                        psStep.setInt(1, planId);
+                        psStep.setInt(2, legIndex);
+                        try (ResultSet rsStep = psStep.executeQuery()) {
+                            while (rsStep.next()) {
+                                stepList.add(new Step(rsStep.getInt("distance"),
+                                        rsStep.getDouble("duration"),
+                                        rsStep.getString("nav_instruction")));
+                            }
+                        }
+                    }
+                    legs.add(new Leg(legDist, legDur, legPoly, startStop, endStop, stepList));
+                }
+            }
+        }
+        return new Route(stops, legs, routeDistance, routeDuration, routePolyline);
+    }
+
+
 
     private void updatePlan(Plan plan) throws Exception {
         String sql = "UPDATE plans SET name = ?, date = ?, start_time = ?, origin_address = ?, " +
@@ -156,14 +291,25 @@ public class SqlitePlanDataAccess implements PlanDataAccessInterface {
                 String categoriesStr = rs.getString("snapshot_categories");
                 Map<String, List<String>> categories = parseCategories(categoriesStr);
 
+                // Load all stops as before
                 List<PlanStop> stops = loadStopsForPlan(conn, id);
-                RouteOld route = new RouteOld(stops);
+
+                // Load the full route (distance, legs, steps) from the new tables.
+                // This will return null if there is no route data for this plan.
+                Route route = loadRouteForPlan(conn, id, stops);
+
+                // Fallback for old plans with no route data which will construct a Route
+                // containing only the stops and no legs.
+                if (route == null) {
+                    route = new Route(stops, new ArrayList<>(), 0, 0.0, null);
+                }
 
                 return new Plan(id, userId, rs.getString("name"),
                         date, start, originAddress, route, radius, categories);
             }
         }
     }
+
 
     private List<PlanStop> loadStopsForPlan(Connection conn, int planId) throws Exception {
         String sql = "SELECT seq, place_id, place_name, place_address, lat, lon, start_time, end_time " +
