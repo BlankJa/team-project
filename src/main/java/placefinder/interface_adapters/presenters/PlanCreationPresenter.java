@@ -80,17 +80,10 @@ public PlanCreationPresenter(PlanCreationViewModel viewModel) {
     public void present(BuildPlanOutputData outputData) {
         if (outputData.getErrorMessage() != null) {
             viewModel.setPlanPreview(null);
-            viewModel.setPlanTruncated(false);
             viewModel.setErrorMessage(outputData.getErrorMessage());
             return;
         }
         viewModel.setPlanPreview(outputData.getPlan());
-        viewModel.setPlanTruncated(outputData.isTruncated());
-        if (outputData.isTruncated()) {
-            viewModel.setInfoMessage("Plan exceeds available time; some places were not included.");
-        } else {
-            viewModel.setInfoMessage(null);
-        }
     }
 
 @Override
