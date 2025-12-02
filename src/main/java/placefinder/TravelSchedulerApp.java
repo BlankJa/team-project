@@ -7,6 +7,7 @@ import placefinder.frameworks_drivers.dataaccess.SqliteUserDataAccess;
 import placefinder.frameworks_drivers.dataaccess.SqlitePreferenceDataAccess;
 import placefinder.frameworks_drivers.dataaccess.SqlitePlanDataAccess;
 import placefinder.frameworks_drivers.dataaccess.SmtpEmailDataAccess;
+import placefinder.frameworks_drivers.dataaccess.EmailConfig;
 
 import placefinder.frameworks_drivers.api.OpenCageGeocodingGateway;
 import placefinder.frameworks_drivers.api.GeoApifyGatewayImpl;
@@ -79,13 +80,16 @@ public class TravelSchedulerApp {
 
         // Create switchable logger - starts with console logging enabled
         SwitchablePlacesLogger placesLogger = new SwitchablePlacesLogger(true);
+        //  PlacesApiLogger placesLogger = new ConsolePlacesLogger();
+        // PlacesApiLogger placesLogger = new InactivePlacesLogger();
 
         PlacesDataAccessInterface placesDataAccessInterface = new GeoApifyGatewayImpl(placesLogger);
         WeatherDataAccessInterface weatherDataAccessInterface = new OpenMeteoWeatherGatewayImpl();
 
+        EmailConfig emailConfig = new EmailConfig();
         EmailDataAccessInterface emailDataAccessInterface = new SmtpEmailDataAccess(
-                "subhanakbar908@gmail.com",
-                "eqrsbydralnvylzm"
+                emailConfig.getUsername(),
+                emailConfig.getPassword()
         );
 
         // ========== VIEW MODELS ==========
