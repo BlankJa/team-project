@@ -3,7 +3,6 @@ package placefinder.usecases.register;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import placefinder.entities.PasswordUtil;
 import placefinder.entities.User;
 import placefinder.usecases.dataacessinterfaces.EmailDataAccessInterface;
 import placefinder.usecases.dataacessinterfaces.UserDataAccessInterface;
@@ -273,9 +272,86 @@ class RegisterInteractorTest {
         assertEquals("Email already in use.", out.getMessage());
     }
 
+    /**
+     * Branch 5: Existing unverified user triggers resend verification code.
+     */
+    @Test
+    void existingUnverifiedUser_resendsVerificationCode() throws Exception {
+        String email = "unverified@example.com";
+        User existingUser = new User(
+                1,
+                "Unverified User",
+                email,
+                "hash",
+                "Toronto",
+                false,  // not verified
+                "oldCode"
+        );
+
+        RegisterInputData input = new RegisterInputData("New User", email, "password123", "Vancouver");
+
+        when(userGateway.findByEmail(email)).thenReturn(existingUser);
+
+        interactor.execute(input);
+
+        RegisterOutputData out = capturePresenterOutput();
+        assertFalse(out.isSuccess(), "Registration should fail for unverified existing user. Message: " + out.getMessage());
+        assertTrue(out.getMessage().contains("An account with this email already exists but is not verified") ||
+                   out.getMessage().contains("account with this email already exists"),
+                   "Message should mention unverified account. Actual: " + out.getMessage());
+        assertTrue(out.getMessage().contains("We've sent a new verification code") ||
+                   out.getMessage().contains("sent a new verification code"),
+                   "Message should mention new verification code sent. Actual: " + out.getMessage());
+
+        verify(userGateway).findByEmail(email);
+        
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userGateway).save(userCaptor.capture());
+        User updatedUser = userCaptor.getValue();
+        assertEquals(existingUser.getId(), updatedUser.getId());
+        assertNotNull(updatedUser.getVerificationCode());
+        assertNotEquals("oldCode", updatedUser.getVerificationCode());  // new code generated
+        
+        verify(emailGateway).sendVerificationEmail(eq(email), anyString());
+    }
+
     // -------------------------------------------------------------------------
     // Success path
     // -------------------------------------------------------------------------
+
+    /**
+     * Branch 6a: Successful registration with valid home city.
+     */
+    @Test
+    void validInputWithHomeCity_createsUserSuccessfully() throws Exception {
+        String name = "John Doe";
+        String email = "john@example.com";
+        String password = "password123";
+        String homeCity = "Toronto";
+
+        RegisterInputData input = new RegisterInputData(name, email, password, homeCity);
+
+        when(userGateway.findByEmail(email)).thenReturn(null);
+
+        interactor.execute(input);
+
+        RegisterOutputData out = capturePresenterOutput();
+        assertTrue(out.isSuccess(), "Registration should succeed. Message: " + out.getMessage());
+        assertTrue(out.getMessage().contains("We've emailed you a 6-digit verification code") ||
+                   out.getMessage().contains("emailed you a 6-digit verification code"));
+
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userGateway).save(userCaptor.capture());
+        User savedUser = userCaptor.getValue();
+        
+        assertEquals(name, savedUser.getName());
+        assertEquals(email, savedUser.getEmail());
+        assertEquals(homeCity, savedUser.getHomeCity());
+        assertFalse(savedUser.isVerified());
+        assertNotNull(savedUser.getVerificationCode());
+
+        verify(emailGateway).sendVerificationEmail(eq(email), anyString());
+    }
 
     /**
      * Branch 6b: Registration with empty home city (should store null).
@@ -379,6 +455,30 @@ class RegisterInteractorTest {
     }
 
     /**
+     * Branch 7b2: Gateway throws exception with "UNIQUE constraint failed" but without "users.email".
+     */
+    @Test
+    void gatewayThrowsUniqueConstraintExceptionWithoutUsersEmail_presenterReceivesFailureMessage() throws Exception {
+        String email = "duplicate@example.com";
+        RegisterInputData input = new RegisterInputData("Test User", email, "password123", "Toronto");
+
+        when(userGateway.findByEmail(email)).thenReturn(null);
+        doThrow(new Exception("UNIQUE constraint failed: other_table.column"))
+                .when(userGateway).save(any(User.class));
+
+        interactor.execute(input);
+
+        verify(userGateway).findByEmail(email);
+        verify(userGateway).save(any(User.class));
+        verifyNoInteractions(emailGateway);
+
+        RegisterOutputData out = capturePresenterOutput();
+        assertFalse(out.isSuccess());
+        assertTrue(out.getMessage().startsWith("Registration failed: "));
+        assertTrue(out.getMessage().contains("UNIQUE constraint failed: other_table.column"));
+    }
+
+    /**
      * Branch 7c: Gateway throws exception with null message.
      */
     @Test
@@ -405,6 +505,49 @@ class RegisterInteractorTest {
         RegisterInputData input = new RegisterInputData("Test User", email, "password123", "Toronto");
 
         when(userGateway.findByEmail(email)).thenThrow(new Exception("   "));
+
+        interactor.execute(input);
+
+        RegisterOutputData out = capturePresenterOutput();
+        assertFalse(out.isSuccess());
+        assertEquals("Registration failed due to an unexpected error.", out.getMessage());
+    }
+
+    /**
+     * Branch 7e: Email gateway throws exception during sendVerificationEmail.
+     */
+    @Test
+    void emailGatewayThrowsExceptionOnSendVerification_presenterReceivesFailureMessage() throws Exception {
+        String email = "test@example.com";
+        RegisterInputData input = new RegisterInputData("Test User", email, "password123", "Toronto");
+
+        when(userGateway.findByEmail(email)).thenReturn(null);
+        doThrow(new Exception("Email service unavailable"))
+                .when(emailGateway).sendVerificationEmail(eq(email), anyString());
+
+        interactor.execute(input);
+
+        verify(userGateway).findByEmail(email);
+        verify(userGateway).save(any(User.class));
+        verify(emailGateway).sendVerificationEmail(eq(email), anyString());
+
+        RegisterOutputData out = capturePresenterOutput();
+        assertFalse(out.isSuccess());
+        assertTrue(out.getMessage().startsWith("Registration failed: "));
+        assertTrue(out.getMessage().contains("Email service unavailable"));
+    }
+
+    /**
+     * Branch 7f: Email gateway throws exception with null message during sendVerificationEmail.
+     */
+    @Test
+    void emailGatewayThrowsExceptionWithNullMessage_presenterReceivesGenericError() throws Exception {
+        String email = "test@example.com";
+        RegisterInputData input = new RegisterInputData("Test User", email, "password123", "Toronto");
+
+        when(userGateway.findByEmail(email)).thenReturn(null);
+        Exception ex = new Exception((String) null);
+        doThrow(ex).when(emailGateway).sendVerificationEmail(eq(email), anyString());
 
         interactor.execute(input);
 

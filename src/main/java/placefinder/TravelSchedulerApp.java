@@ -2,6 +2,7 @@ package placefinder;
 
 import javax.swing.SwingUtilities;
 
+import placefinder.frameworks_drivers.api.GoogleMapsRouteGatewayImpl;
 import placefinder.frameworks_drivers.database.Database;
 import placefinder.frameworks_drivers.dataaccess.SqliteUserDataAccess;
 import placefinder.frameworks_drivers.dataaccess.SqlitePreferenceDataAccess;
@@ -13,17 +14,11 @@ import placefinder.frameworks_drivers.api.OpenCageGeocodingGateway;
 import placefinder.frameworks_drivers.api.GeoApifyGatewayImpl;
 import placefinder.frameworks_drivers.api.OpenMeteoWeatherGatewayImpl;
 
+import placefinder.usecases.dataacessinterfaces.*;
 import placefinder.usecases.favouritelocation.AddFavoriteInputBoundary;
 import placefinder.usecases.favouritelocation.AddFavoriteInteractor;
 import placefinder.usecases.favouritelocation.DeleteFavoriteInputBoundary;
 import placefinder.usecases.favouritelocation.DeleteFavoriteInteractor;
-import placefinder.usecases.dataacessinterfaces.UserDataAccessInterface;
-import placefinder.usecases.dataacessinterfaces.PreferenceDataAccessInterface;
-import placefinder.usecases.dataacessinterfaces.PlanDataAccessInterface;
-import placefinder.usecases.dataacessinterfaces.GeocodingDataAccessInterface;
-import placefinder.usecases.dataacessinterfaces.PlacesDataAccessInterface;
-import placefinder.usecases.dataacessinterfaces.WeatherDataAccessInterface;
-import placefinder.usecases.dataacessinterfaces.EmailDataAccessInterface;
 
 // login & register
 import placefinder.usecases.login.*;
@@ -84,6 +79,8 @@ public class TravelSchedulerApp {
         // PlacesApiLogger placesLogger = new InactivePlacesLogger();
 
         PlacesDataAccessInterface placesDataAccessInterface = new GeoApifyGatewayImpl(placesLogger);
+        PlacesDataAccessInterface placesDataAccessInterface = new GeoApifyGatewayImpl();
+        RouteDataAccessInterface routeDataAccessInterface = new GoogleMapsRouteGatewayImpl();
         WeatherDataAccessInterface weatherDataAccessInterface = new OpenMeteoWeatherGatewayImpl();
 
         EmailConfig emailConfig = new EmailConfig();
@@ -163,6 +160,7 @@ public class TravelSchedulerApp {
                 new BuildPlanInteractor(
                         preferenceDataAccessInterface,
                         geocodingDataAccessInterface,
+                        routeDataAccessInterface,
                         buildPlanPresenter
                 );
 
