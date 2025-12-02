@@ -19,8 +19,8 @@ public class VerifyEmailInteractor implements VerifyEmailInputBoundary {
 
     @Override
     public void execute(VerifyEmailInputData inputData) {
-        String email = inputData.getEmail() == null ? "" : inputData.getEmail().trim();
-        String code = inputData.getCode() == null ? "" : inputData.getCode().trim();
+        final String email = inputData.getEmail() == null ? "" : inputData.getEmail().trim();
+        final String code = inputData.getCode() == null ? "" : inputData.getCode().trim();
 
         System.out.println("[VERIFY] email='" + email + "', code='" + code + "'");
 
@@ -30,7 +30,7 @@ public class VerifyEmailInteractor implements VerifyEmailInputBoundary {
         }
 
         try {
-            User user = userDataAccessInterface.findByEmail(email);
+            final User user = userDataAccessInterface.findByEmail(email);
             System.out.println("[VERIFY] findByEmail returned: "
                     + (user == null ? "null" : "user id=" + user.getId()));
 
@@ -44,7 +44,7 @@ public class VerifyEmailInteractor implements VerifyEmailInputBoundary {
                 return;
             }
 
-            String storedCode = user.getVerificationCode();
+            final String storedCode = user.getVerificationCode();
             if (storedCode == null || !storedCode.equals(code)) {
                 presenter.present(new VerifyEmailOutputData(false, "Invalid verification code."));
                 return;

@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import placefinder.entities.PasswordUtil;
 import placefinder.entities.User;
-import placefinder.usecases.ports.UserGateway;
+import placefinder.usecases.dataacessinterfaces.UserDataAccessInterface;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -35,7 +35,7 @@ class LoginInteractorTest {
     // -------------------------------------------------------------------------
 
     /** Persistence port used by the interactor (mock). */
-    private UserGateway userGateway;
+    private UserDataAccessInterface userGateway;
 
     /** Presenter / output boundary used by the interactor (mock). */
     private LoginOutputBoundary presenter;
@@ -49,7 +49,7 @@ class LoginInteractorTest {
 
     @BeforeEach
     void setUp() {
-        userGateway = mock(UserGateway.class);
+        userGateway = mock(UserDataAccessInterface.class);
         presenter   = mock(LoginOutputBoundary.class);
         interactor  = new LoginInteractor(userGateway, presenter);
     }

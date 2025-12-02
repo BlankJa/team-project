@@ -321,4 +321,60 @@ class WeatherAdviceInteractorTest {
         assertNull(out.getAdvice());
         assertEquals("Geocoding service not reachable", out.getErrorMessage());
     }
+
+    @Test
+    void blankDateString_usesTodayAndProducesAdvice() throws Exception {
+        // Arrange
+        GeocodingDataAccessInterface geocodingDataAccessInterface = mock(GeocodingDataAccessInterface.class);
+        WeatherDataAccessInterface weatherDataAccessInterface = mock(WeatherDataAccessInterface.class);
+
+        GeocodeResult geo = mock(GeocodeResult.class);
+        when(geo.getLat()).thenReturn(43.65);
+        when(geo.getLon()).thenReturn(-79.38);
+        when(geo.getFormattedAddress()).thenReturn("Toronto, ON");
+        when(geocodingDataAccessInterface.geocode("Toronto")).thenReturn(geo);
+
+        WeatherSummary weather = mock(WeatherSummary.class);
+        when(weather.getTemperatureC()).thenReturn(12.0);   // middle temp branch (<= 15)
+        when(weather.getUvIndex()).thenReturn(3.5);        // moderate UV branch
+        when(weather.getConditions()).thenReturn("Cloudy");
+        when(weather.isPrecipitationLikely()).thenReturn(false);
+
+        // any(LocalDate.class) so we don't care what "today" actually is
+        when(weatherDataAccessInterface.getDailyWeather(
+                eq(43.65), eq(-79.38), any(LocalDate.class))
+        ).thenReturn(weather);
+
+        CapturingPresenter presenter = new CapturingPresenter();
+        WeatherAdviceInteractor interactor =
+                new WeatherAdviceInteractor(geocodingDataAccessInterface, weatherDataAccessInterface, presenter);
+
+        // IMPORTANT: non-null but blank string => first part false, second part true
+        WeatherAdviceInputData input =
+                new WeatherAdviceInputData("Toronto", "   "); // spaces => isBlank() == true
+
+        // Act
+        interactor.execute(input);
+
+        // Assert
+        WeatherAdviceOutputData out = presenter.getOutput();
+        assertNotNull(out);
+        assertNull(out.getErrorMessage());
+
+        String summary = out.getSummary();
+        String advice = out.getAdvice();
+
+        assertNotNull(summary);
+        assertFalse(summary.isBlank());
+        assertTrue(summary.toLowerCase().contains("location:"), "Summary should contain 'Location:'");
+        assertTrue(summary.toLowerCase().contains("temperature:"), "Summary should contain 'Temperature:'");
+
+        assertNotNull(advice);
+        assertFalse(advice.isBlank());
+        // Sanity check: should mention jacket/sweater-ish (cool branch)
+        assertTrue(advice.toLowerCase().contains("jacket")
+                        || advice.toLowerCase().contains("sweater"),
+                "Advice should mention light jacket or sweater for cool weather");
+    }
+
 }

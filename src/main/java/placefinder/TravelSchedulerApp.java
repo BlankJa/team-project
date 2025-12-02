@@ -48,7 +48,6 @@ import placefinder.interface_adapters.controllers.*;
 import placefinder.interface_adapters.viewmodels.*;
 import placefinder.interface_adapters.presenters.*;
 
-// UI
 import placefinder.frameworks_drivers.view.frames.AppFrame;
 import placefinder.frameworks_drivers.view.frames.SplashScreen;
 

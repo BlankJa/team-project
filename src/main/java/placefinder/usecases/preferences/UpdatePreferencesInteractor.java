@@ -40,6 +40,8 @@ public class UpdatePreferencesInteractor implements UpdatePreferencesInputBounda
                 }
             }
             
+            // Validate: need at least 3 sub-categories
+            // Note: if selectedCategories is null, totalSubCategories will be 0, so validation will fail
             if (totalSubCategories < 3) {
                 presenter.present(new UpdatePreferencesOutputData(false,
                         "Please select at least 3 sub-categories."));
@@ -48,11 +50,9 @@ public class UpdatePreferencesInteractor implements UpdatePreferencesInputBounda
             
             PreferenceProfile profile = preferenceDataAccessInterface.loadForUser(inputData.getUserId());
             profile.setRadiusKm(inputData.getRadiusKm());
-            if (selectedCategories != null) {
-                profile.setSelectedCategories(new HashMap<>(selectedCategories));
-            } else {
-                profile.setSelectedCategories(new HashMap<>());
-            }
+            // Set selectedCategories: at this point, selectedCategories cannot be null
+            // because validation above ensures totalSubCategories >= 3, which requires non-null categories
+            profile.setSelectedCategories(new HashMap<>(selectedCategories));
             preferenceDataAccessInterface.saveForUser(profile);
             presenter.present(new UpdatePreferencesOutputData(true, "Preferences saved."));
         } catch (Exception e) {
