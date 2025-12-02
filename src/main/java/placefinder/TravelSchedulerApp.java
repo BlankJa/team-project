@@ -8,6 +8,7 @@ import placefinder.frameworks_drivers.dataaccess.SqliteUserDataAccess;
 import placefinder.frameworks_drivers.dataaccess.SqlitePreferenceDataAccess;
 import placefinder.frameworks_drivers.dataaccess.SqlitePlanDataAccess;
 import placefinder.frameworks_drivers.dataaccess.SmtpEmailDataAccess;
+import placefinder.frameworks_drivers.dataaccess.EmailConfig;
 
 import placefinder.frameworks_drivers.api.OpenCageGeocodingGateway;
 import placefinder.frameworks_drivers.api.GeoApifyGatewayImpl;
@@ -43,6 +44,9 @@ import placefinder.usecases.weatheradvice.*;
 // verify email
 import placefinder.usecases.verify.*;
 
+// logging
+import placefinder.usecases.logging.SwitchablePlacesLogger;
+
 // interface adapters
 import placefinder.interface_adapters.controllers.*;
 import placefinder.interface_adapters.viewmodels.*;
@@ -68,13 +72,21 @@ public class TravelSchedulerApp {
         PreferenceDataAccessInterface preferenceDataAccessInterface = new SqlitePreferenceDataAccess();
         PlanDataAccessInterface planDataAccessInterface = new SqlitePlanDataAccess();
         GeocodingDataAccessInterface geocodingDataAccessInterface = new OpenCageGeocodingGateway();
+
+        // Create switchable logger - starts with console logging enabled
+        SwitchablePlacesLogger placesLogger = new SwitchablePlacesLogger(true);
+        //  PlacesApiLogger placesLogger = new ConsolePlacesLogger();
+        // PlacesApiLogger placesLogger = new InactivePlacesLogger();
+
+        PlacesDataAccessInterface placesDataAccessInterface = new GeoApifyGatewayImpl(placesLogger);
         PlacesDataAccessInterface placesDataAccessInterface = new GeoApifyGatewayImpl();
         RouteDataAccessInterface routeDataAccessInterface = new GoogleMapsRouteGatewayImpl();
         WeatherDataAccessInterface weatherDataAccessInterface = new OpenMeteoWeatherGatewayImpl();
 
+        EmailConfig emailConfig = new EmailConfig();
         EmailDataAccessInterface emailDataAccessInterface = new SmtpEmailDataAccess(
-                "subhanakbar908@gmail.com",
-                "eqrsbydralnvylzm"
+                emailConfig.getUsername(),
+                emailConfig.getPassword()
         );
 
         // ========== VIEW MODELS ==========
@@ -242,7 +254,8 @@ public class TravelSchedulerApp {
                     planCreationVM,
                     dashboardVM,
                     planDetailsVM,
-                    weatherAdviceVM
+                    weatherAdviceVM,
+                    placesLogger
             );
 
             splash.showSplash(() -> frame.setVisible(true));

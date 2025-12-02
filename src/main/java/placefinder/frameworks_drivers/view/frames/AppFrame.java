@@ -24,6 +24,9 @@ import placefinder.interface_adapters.viewmodels.DashboardViewModel;
 import placefinder.interface_adapters.viewmodels.PlanDetailsViewModel;
 import placefinder.interface_adapters.viewmodels.WeatherAdviceViewModel;
 
+// Logging
+import placefinder.usecases.logging.SwitchablePlacesLogger;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -63,6 +66,9 @@ public class AppFrame extends JFrame {
     // ==== Session state ====
     private Integer currentUserId = null;
     private String currentUserName = null;
+
+    // ==== Logging ====
+    private final SwitchablePlacesLogger placesLogger;
 
     // ==== Layout ====
     private CardLayout cardLayout;
@@ -107,7 +113,8 @@ public class AppFrame extends JFrame {
             PlanCreationViewModel planCreationVM,
             DashboardViewModel dashboardVM,
             PlanDetailsViewModel planDetailsVM,
-            WeatherAdviceViewModel weatherAdviceVM
+            WeatherAdviceViewModel weatherAdviceVM,
+            SwitchablePlacesLogger placesLogger
     ) {
         super("PlaceFinder");
 
@@ -132,6 +139,9 @@ public class AppFrame extends JFrame {
         this.dashboardVM    = dashboardVM;
         this.planDetailsVM  = planDetailsVM;
         this.weatherAdviceVM = weatherAdviceVM;
+
+        // Logging
+        this.placesLogger = placesLogger;
 
         initUI();
     }
@@ -166,7 +176,8 @@ public class AppFrame extends JFrame {
                 applyPreferencesFromPlanController,
                 getPlanDetailsController,
                 dashboardVM,
-                planDetailsVM
+                planDetailsVM,
+                placesLogger
         );
 
         // Preferences

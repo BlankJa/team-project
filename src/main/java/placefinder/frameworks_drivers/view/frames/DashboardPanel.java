@@ -12,6 +12,7 @@ import placefinder.interface_adapters.controllers.ApplyPreferencesFromPlanContro
 import placefinder.interface_adapters.controllers.GetPlanDetailsController;
 import placefinder.interface_adapters.viewmodels.DashboardViewModel;
 import placefinder.interface_adapters.viewmodels.PlanDetailsViewModel;
+import placefinder.usecases.logging.SwitchablePlacesLogger;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -32,6 +33,7 @@ public class DashboardPanel extends JPanel {
 
     private final DashboardViewModel dashboardVM;
     private final PlanDetailsViewModel planDetailsVM;
+    private final SwitchablePlacesLogger placesLogger;
 
     private JLabel welcomeLabel;
     private JLabel totalPlansValue;
@@ -50,7 +52,8 @@ public class DashboardPanel extends JPanel {
                           ApplyPreferencesFromPlanController applyPreferencesFromPlanController,
                           GetPlanDetailsController getPlanDetailsController,
                           DashboardViewModel dashboardVM,
-                          PlanDetailsViewModel planDetailsVM) {
+                          PlanDetailsViewModel planDetailsVM,
+                          SwitchablePlacesLogger placesLogger) {
 
         this.appFrame = appFrame;
         this.listPlansController = listPlansController;
@@ -59,6 +62,7 @@ public class DashboardPanel extends JPanel {
         this.getPlanDetailsController = getPlanDetailsController;
         this.dashboardVM = dashboardVM;
         this.planDetailsVM = planDetailsVM;
+        this.placesLogger = placesLogger;
 
         initUI();
     }
@@ -156,11 +160,21 @@ public class DashboardPanel extends JPanel {
         stylePrimaryButton(weatherButton);
         weatherButton.addActionListener(e -> appFrame.showWeatherAdvice());
 
+        Button loggerToggleButton = new Button();
+        updateLoggerButtonText(loggerToggleButton);
+        styleLoggerButton(loggerToggleButton);
+        loggerToggleButton.addActionListener(e -> {
+            placesLogger.toggle();
+            updateLoggerButtonText(loggerToggleButton);
+        });
+
         actionsPanel.add(prefButton);
         actionsPanel.add(Box.createVerticalStrut(10));
         actionsPanel.add(planButton);
         actionsPanel.add(Box.createVerticalStrut(10));
         actionsPanel.add(weatherButton);
+        actionsPanel.add(Box.createVerticalStrut(10));
+        actionsPanel.add(loggerToggleButton);
         actionsPanel.add(Box.createVerticalGlue());
 
         main.add(actionsPanel, BorderLayout.WEST);
@@ -253,6 +267,24 @@ public class DashboardPanel extends JPanel {
         btn.setPreferredSize(new Dimension(180, 32));
         btn.setMaximumSize(new Dimension(180, 32));
         btn.setAlignmentX(Component.LEFT_ALIGNMENT);
+    }
+
+    private void styleLoggerButton(Button btn) {
+        btn.setForeground(Color.WHITE);
+        btn.setFont(new Font("sansserif", Font.BOLD, 12));
+        btn.setPreferredSize(new Dimension(180, 32));
+        btn.setMaximumSize(new Dimension(180, 32));
+        btn.setAlignmentX(Component.LEFT_ALIGNMENT);
+    }
+
+    private void updateLoggerButtonText(Button btn) {
+        if (placesLogger.isActive()) {
+            btn.setText("Disable Logger");
+            btn.setBackground(new Color(120, 140, 160));
+        } else {
+            btn.setText("Enable Logger");
+            btn.setBackground(new Color(100, 100, 100));
+        }
     }
 
     private JLabel createStatCard(JPanel parentRow, String title) {
