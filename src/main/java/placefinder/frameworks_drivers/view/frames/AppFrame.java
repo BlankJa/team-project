@@ -3,26 +3,10 @@ package placefinder.frameworks_drivers.view.frames;
 import placefinder.entities.Plan;
 
 // Controllers
-import placefinder.interface_adapters.controllers.LoginController;
-import placefinder.interface_adapters.controllers.RegisterController;
-import placefinder.interface_adapters.controllers.VerifyEmailController;
-import placefinder.interface_adapters.controllers.PreferencesController;
-import placefinder.interface_adapters.controllers.PlanCreationController;
-import placefinder.interface_adapters.controllers.ListPlansController;
-import placefinder.interface_adapters.controllers.DeletePlanController;
-import placefinder.interface_adapters.controllers.ApplyPreferencesFromPlanController;
-import placefinder.interface_adapters.controllers.GetPlanDetailsController;
-import placefinder.interface_adapters.controllers.WeatherAdviceController;
+import placefinder.interface_adapters.controllers.*;
 
 // ViewModels
-import placefinder.interface_adapters.viewmodels.LoginViewModel;
-import placefinder.interface_adapters.viewmodels.RegisterViewModel;
-import placefinder.interface_adapters.viewmodels.VerifyEmailViewModel;
-import placefinder.interface_adapters.viewmodels.PreferencesViewModel;
-import placefinder.interface_adapters.viewmodels.PlanCreationViewModel;
-import placefinder.interface_adapters.viewmodels.DashboardViewModel;
-import placefinder.interface_adapters.viewmodels.PlanDetailsViewModel;
-import placefinder.interface_adapters.viewmodels.WeatherAdviceViewModel;
+import placefinder.interface_adapters.viewmodels.*;
 
 // Logging
 import placefinder.usecases.logging.SwitchablePlacesLogger;
@@ -51,6 +35,7 @@ public class AppFrame extends JFrame {
     private final DeletePlanController deletePlanController;
     private final ApplyPreferencesFromPlanController applyPreferencesFromPlanController;
     private final GetPlanDetailsController getPlanDetailsController;
+    private final GetRouteDetailsController getRouteDetailsController;
     private final WeatherAdviceController weatherAdviceController;
 
     // ==== ViewModels ====
@@ -61,6 +46,7 @@ public class AppFrame extends JFrame {
     private final PlanCreationViewModel planCreationVM;
     private final DashboardViewModel dashboardVM;
     private final PlanDetailsViewModel planDetailsVM;
+    private final DirectionsViewModel directionsVM;
     private final WeatherAdviceViewModel weatherAdviceVM;
 
     // ==== Session state ====
@@ -105,6 +91,7 @@ public class AppFrame extends JFrame {
             DeletePlanController deletePlanController,
             ApplyPreferencesFromPlanController applyPreferencesFromPlanController,
             GetPlanDetailsController getPlanDetailsController,
+            GetRouteDetailsController getRouteDetailsController,
             WeatherAdviceController weatherAdviceController,
             LoginViewModel loginVM,
             RegisterViewModel registerVM,
@@ -113,31 +100,34 @@ public class AppFrame extends JFrame {
             PlanCreationViewModel planCreationVM,
             DashboardViewModel dashboardVM,
             PlanDetailsViewModel planDetailsVM,
+            DirectionsViewModel directionsVM,
             WeatherAdviceViewModel weatherAdviceVM,
             SwitchablePlacesLogger placesLogger
     ) {
         super("PlaceFinder");
 
         // Controllers
-        this.loginController        = loginController;
-        this.registerController     = registerController;
-        this.verifyEmailController  = verifyEmailController;
-        this.preferencesController  = preferencesController;
+        this.loginController = loginController;
+        this.registerController = registerController;
+        this.verifyEmailController = verifyEmailController;
+        this.preferencesController = preferencesController;
         this.planCreationController = planCreationController;
-        this.listPlansController    = listPlansController;
-        this.deletePlanController   = deletePlanController;
+        this.listPlansController = listPlansController;
+        this.deletePlanController = deletePlanController;
         this.applyPreferencesFromPlanController = applyPreferencesFromPlanController;
         this.getPlanDetailsController = getPlanDetailsController;
+        this.getRouteDetailsController = getRouteDetailsController;
         this.weatherAdviceController = weatherAdviceController;
 
         // ViewModels
-        this.loginVM        = loginVM;
-        this.registerVM     = registerVM;
-        this.verifyVM       = verifyVM;
-        this.preferencesVM  = preferencesVM;
+        this.loginVM = loginVM;
+        this.registerVM = registerVM;
+        this.verifyVM = verifyVM;
+        this.preferencesVM = preferencesVM;
         this.planCreationVM = planCreationVM;
-        this.dashboardVM    = dashboardVM;
-        this.planDetailsVM  = planDetailsVM;
+        this.dashboardVM = dashboardVM;
+        this.planDetailsVM = planDetailsVM;
+        this.directionsVM = directionsVM;
         this.weatherAdviceVM = weatherAdviceVM;
 
         // Logging
@@ -209,6 +199,8 @@ public class AppFrame extends JFrame {
                 applyPreferencesFromPlanController,
                 dashboardVM,
                 planDetailsVM,
+                directionsVM,
+                getRouteDetailsController,
                 this
         );
 
