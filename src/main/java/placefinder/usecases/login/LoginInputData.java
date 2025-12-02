@@ -5,6 +5,7 @@ package placefinder.usecases.login;
  * Holds email and password for authentication.
  */
 public class LoginInputData {
+
     private final String email;
     private final String password;
 
@@ -13,6 +14,11 @@ public class LoginInputData {
         this.password = password;
     }
 
-    public String getEmail() { return email; }
-    public String getPassword() { return password; }
+    public String getEmail() {
+        return email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
 }
