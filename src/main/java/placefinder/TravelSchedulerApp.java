@@ -79,7 +79,6 @@ public class TravelSchedulerApp {
         // PlacesApiLogger placesLogger = new InactivePlacesLogger();
 
         PlacesDataAccessInterface placesDataAccessInterface = new GeoApifyGatewayImpl(placesLogger);
-        PlacesDataAccessInterface placesDataAccessInterface = new GeoApifyGatewayImpl();
         RouteDataAccessInterface routeDataAccessInterface = new GoogleMapsRouteGatewayImpl();
         WeatherDataAccessInterface weatherDataAccessInterface = new OpenMeteoWeatherGatewayImpl();
 
