@@ -24,6 +24,7 @@ public class GoogleMapsRouteGatewayImpl implements RouteDataAccessInterface {
         this.apiKey = apiKey;
     }
 
+    @SuppressWarnings("checkstyle:FinalLocalVariable")
     @Override
     public Route computeRoute(GeocodeResult origin, LocalTime startTime, List<Place> places) throws Exception {
         PlanStop originStop = new PlanStop(0, new Place(), startTime, startTime);
@@ -134,7 +135,8 @@ public class GoogleMapsRouteGatewayImpl implements RouteDataAccessInterface {
                     .withDistance(legObj.getAsJsonPrimitive("distanceMeters").getAsInt())
                     .withDuration(legDuration)
                     .withEncodedPolyline(
-                            legObj.getAsJsonObject("polyline").getAsJsonPrimitive("encodedPolyline").getAsString())
+                            legObj.getAsJsonObject("polyline")
+                                    .getAsJsonPrimitive("encodedPolyline").getAsString())
                     .withStartLocation(startStop)
                     .withEndLocation(endStop)
                     .withSteps(steps)
@@ -148,9 +150,11 @@ public class GoogleMapsRouteGatewayImpl implements RouteDataAccessInterface {
                 .withLegs(legs)
                 .withDistance(routeObj.getAsJsonPrimitive("distanceMeters").getAsInt())
                 .withDuration(Double.parseDouble(
-                        routeObj.getAsJsonPrimitive("duration").getAsString().replace("s", "")))
+                        routeObj.getAsJsonPrimitive("duration")
+                                .getAsString().replace("s", "")))
                 .withEncodedPolyline(
-                        routeObj.getAsJsonObject("polyline").getAsJsonPrimitive("encodedPolyline").getAsString())
+                        routeObj.getAsJsonObject("polyline")
+                                .getAsJsonPrimitive("encodedPolyline").getAsString())
                 .build();
 
     }

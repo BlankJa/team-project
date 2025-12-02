@@ -35,6 +35,7 @@ import placefinder.usecases.saveplan.*;
 // plans
 import placefinder.usecases.plans.*;
 import placefinder.usecases.getplandetails.*;
+import placefinder.usecases.getroutedetails.*;
 import placefinder.usecases.deleteplan.*;
 import placefinder.usecases.listplans.*;
 
@@ -96,6 +97,7 @@ public class TravelSchedulerApp {
         PlanCreationViewModel planCreationVM = new PlanCreationViewModel();
         DashboardViewModel dashboardVM = new DashboardViewModel();
         PlanDetailsViewModel planDetailsVM = new PlanDetailsViewModel();
+        DirectionsViewModel directionsVM = new DirectionsViewModel();
         WeatherAdviceViewModel weatherAdviceVM = new WeatherAdviceViewModel();
 
         // ========== PRESENTERS & INTERACTORS & CONTROLLERS ==========
@@ -190,6 +192,7 @@ public class TravelSchedulerApp {
                 new ApplyPreferencesFromPlanPresenter(dashboardVM);
         GetPlanDetailsPresenter getPlanDetailsPresenter =
                 new GetPlanDetailsPresenter(planDetailsVM);
+        GetRouteDetailsPresenter routePresenter = new GetRouteDetailsPresenter(directionsVM);
 
         ListPlansInputBoundary listPlansInteractor =
                 new ListPlansInteractor(planDataAccessInterface, listPlansPresenter);
@@ -203,6 +206,9 @@ public class TravelSchedulerApp {
                 );
         GetPlanDetailsInputBoundary getPlanDetailsInteractor =
                 new GetPlanDetailsInteractor(planDataAccessInterface, getPlanDetailsPresenter);
+
+        GetRouteDetailsInputBoundary routeInteractor =
+                new GetRouteDetailsInteractor(planDataAccessInterface, routePresenter);
 
         ListPlansController listPlansController = new ListPlansController(
                 listPlansInteractor,
@@ -221,6 +227,12 @@ public class TravelSchedulerApp {
                 new GetPlanDetailsController(
                         getPlanDetailsInteractor,
                         planDetailsVM
+                );
+
+        GetRouteDetailsController routeController =
+                new GetRouteDetailsController(
+                        routeInteractor,
+                        directionsVM
                 );
 
         // ---- Weather Advice ----
@@ -245,6 +257,7 @@ public class TravelSchedulerApp {
                     deletePlanController,
                     applyPreferencesFromPlanController,
                     getPlanDetailsController,
+                    routeController,
                     weatherAdviceController,
                     loginVM,
                     registerVM,
@@ -253,6 +266,7 @@ public class TravelSchedulerApp {
                     planCreationVM,
                     dashboardVM,
                     planDetailsVM,
+                    directionsVM,
                     weatherAdviceVM,
                     placesLogger
             );
