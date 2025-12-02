@@ -3,6 +3,7 @@ package placefinder.usecases.preferences;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import placefinder.entities.FavoriteLocation;
 import placefinder.entities.PreferenceProfile;
 import placefinder.usecases.dataacessinterfaces.PreferenceDataAccessInterface;
 
@@ -14,39 +15,34 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Unit tests for {@link UpdatePreferencesInteractor}.
+ * Combined unit tests for {@link GetPreferencesInteractor} and {@link UpdatePreferencesInteractor}.
  *
  * <p>This suite is designed to exercise:
  * <ul>
  *     <li>All lines of code (100% line coverage).</li>
  *     <li>All decision outcomes / paths (100% branch coverage).</li>
  * </ul>
- *
- * <p>Test scenarios:
- * <ul>
- *     <li>Radius validation (negative radius)</li>
- *     <li>Radius validation (radius > 5)</li>
- *     <li>Sub-categories validation (less than 3 sub-categories)</li>
- *     <li>Sub-categories validation (null selectedCategories)</li>
- *     <li>Sub-categories validation (empty selectedCategories)</li>
- *     <li>Successful update</li>
- *     <li>Exception handling (gateway throws exception)</li>
- * </ul>
  */
-class UpdatePreferencesInteractorTest {
+class PreferencesInteractorTest {
 
     // -------------------------------------------------------------------------
     // Collaborators & System Under Test
     // -------------------------------------------------------------------------
 
-    /** Persistence port used by the interactor (mock). */
+    /** Persistence port used by the interactors (mock). */
     private PreferenceDataAccessInterface preferenceDataAccessInterface;
 
-    /** Presenter / output boundary used by the interactor (mock). */
-    private UpdatePreferencesOutputBoundary presenter;
+    /** Presenter / output boundary for GetPreferences (mock). */
+    private GetPreferencesOutputBoundary getPreferencesPresenter;
 
-    /** System under test. */
-    private UpdatePreferencesInteractor interactor;
+    /** Presenter / output boundary for UpdatePreferences (mock). */
+    private UpdatePreferencesOutputBoundary updatePreferencesPresenter;
+
+    /** System under test - GetPreferences. */
+    private GetPreferencesInteractor getPreferencesInteractor;
+
+    /** System under test - UpdatePreferences. */
+    private UpdatePreferencesInteractor updatePreferencesInteractor;
 
     // -------------------------------------------------------------------------
     // Test lifecycle
@@ -55,34 +51,183 @@ class UpdatePreferencesInteractorTest {
     @BeforeEach
     void setUp() {
         preferenceDataAccessInterface = mock(PreferenceDataAccessInterface.class);
-        presenter         = mock(UpdatePreferencesOutputBoundary.class);
-        interactor        = new UpdatePreferencesInteractor(preferenceDataAccessInterface, presenter);
+        getPreferencesPresenter = mock(GetPreferencesOutputBoundary.class);
+        updatePreferencesPresenter = mock(UpdatePreferencesOutputBoundary.class);
+        getPreferencesInteractor = new GetPreferencesInteractor(preferenceDataAccessInterface, getPreferencesPresenter);
+        updatePreferencesInteractor = new UpdatePreferencesInteractor(preferenceDataAccessInterface, updatePreferencesPresenter);
     }
 
     // -------------------------------------------------------------------------
-    // Utility
+    // Utility methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Captures the single {@link GetPreferencesOutputData} instance sent to the
+     * presenter during an interactor execution.
+     */
+    private GetPreferencesOutputData captureGetPreferencesOutput() {
+        ArgumentCaptor<GetPreferencesOutputData> captor =
+                ArgumentCaptor.forClass(GetPreferencesOutputData.class);
+        verify(getPreferencesPresenter).present(captor.capture());
+        return captor.getValue();
+    }
 
     /**
      * Captures the single {@link UpdatePreferencesOutputData} instance sent to the
      * presenter during an interactor execution.
      */
-    private UpdatePreferencesOutputData capturePresenterOutput() {
+    private UpdatePreferencesOutputData captureUpdatePreferencesOutput() {
         ArgumentCaptor<UpdatePreferencesOutputData> captor =
                 ArgumentCaptor.forClass(UpdatePreferencesOutputData.class);
-        verify(presenter).present(captor.capture());
+        verify(updatePreferencesPresenter).present(captor.capture());
         return captor.getValue();
     }
 
-    // -------------------------------------------------------------------------
-    // Validation branch tests
-    // -------------------------------------------------------------------------
+    // ========================================================================
+    // GetPreferencesInteractor Tests
+    // ========================================================================
+
+    /**
+     * Happy path: Successfully retrieve user preferences.
+     */
+    @Test
+    void getPreferences_successfulRetrieval_returnsPreferencesData() throws Exception {
+        int userId = 1;
+        double radiusKm = 3.5;
+        GetPreferencesInputData input = new GetPreferencesInputData(userId);
+
+        Map<String, List<String>> selectedCategories = new HashMap<>();
+        selectedCategories.put("restaurants", List.of("italian", "chinese", "mexican"));
+        selectedCategories.put("attractions", List.of("museums", "parks"));
+        
+        PreferenceProfile profile = new PreferenceProfile(userId, radiusKm, selectedCategories);
+
+        FavoriteLocation fav1 = new FavoriteLocation(1, userId, "Location 1", "123 Main St", 43.6532, -79.3832);
+        FavoriteLocation fav2 = new FavoriteLocation(2, userId, "Location 2", "456 Oak Ave", 45.5017, -73.5673);
+        List<FavoriteLocation> favorites = List.of(fav1, fav2);
+
+        when(preferenceDataAccessInterface.loadForUser(userId)).thenReturn(profile);
+        when(preferenceDataAccessInterface.listFavorites(userId)).thenReturn(favorites);
+
+        getPreferencesInteractor.execute(input);
+
+        verify(preferenceDataAccessInterface).loadForUser(userId);
+        verify(preferenceDataAccessInterface).listFavorites(userId);
+
+        GetPreferencesOutputData out = captureGetPreferencesOutput();
+        assertNull(out.getErrorMessage());
+        assertEquals(radiusKm, out.getRadiusKm());
+        assertEquals(favorites, out.getFavorites());
+        assertEquals(selectedCategories, out.getSelectedCategories());
+    }
+
+    /**
+     * Happy path: User with no favorites and empty categories.
+     */
+    @Test
+    void getPreferences_successfulRetrievalWithEmptyData_returnsDefaultPreferences() throws Exception {
+        int userId = 2;
+        double radiusKm = 2.0;
+        GetPreferencesInputData input = new GetPreferencesInputData(userId);
+
+        PreferenceProfile profile = new PreferenceProfile(userId, radiusKm);
+        List<FavoriteLocation> emptyFavorites = List.of();
+
+        when(preferenceDataAccessInterface.loadForUser(userId)).thenReturn(profile);
+        when(preferenceDataAccessInterface.listFavorites(userId)).thenReturn(emptyFavorites);
+
+        getPreferencesInteractor.execute(input);
+
+        verify(preferenceDataAccessInterface).loadForUser(userId);
+        verify(preferenceDataAccessInterface).listFavorites(userId);
+
+        GetPreferencesOutputData out = captureGetPreferencesOutput();
+        assertNull(out.getErrorMessage());
+        assertEquals(radiusKm, out.getRadiusKm());
+        assertEquals(emptyFavorites, out.getFavorites());
+        assertNotNull(out.getSelectedCategories());
+    }
+
+    /**
+     * Error path: Gateway throws exception during loadForUser.
+     */
+    @Test
+    void getPreferences_gatewayThrowsExceptionOnLoad_presenterReceivesFailureWithDefaults() throws Exception {
+        int userId = 3;
+        GetPreferencesInputData input = new GetPreferencesInputData(userId);
+
+        when(preferenceDataAccessInterface.loadForUser(userId))
+                .thenThrow(new Exception("Database connection failed"));
+
+        getPreferencesInteractor.execute(input);
+
+        verify(preferenceDataAccessInterface).loadForUser(userId);
+        verify(preferenceDataAccessInterface, never()).listFavorites(anyInt());
+
+        GetPreferencesOutputData out = captureGetPreferencesOutput();
+        assertNotNull(out.getErrorMessage());
+        assertEquals("Database connection failed", out.getErrorMessage());
+        assertEquals(2.0, out.getRadiusKm());
+        assertEquals(List.of(), out.getFavorites());
+        assertNull(out.getSelectedCategories());
+    }
+
+    /**
+     * Error path: Gateway throws exception during listFavorites.
+     */
+    @Test
+    void getPreferences_gatewayThrowsExceptionOnListFavorites_presenterReceivesFailureWithDefaults() throws Exception {
+        int userId = 4;
+        GetPreferencesInputData input = new GetPreferencesInputData(userId);
+
+        PreferenceProfile profile = new PreferenceProfile(userId, 1.5);
+        
+        when(preferenceDataAccessInterface.loadForUser(userId)).thenReturn(profile);
+        when(preferenceDataAccessInterface.listFavorites(userId))
+                .thenThrow(new Exception("Failed to load favorites"));
+
+        getPreferencesInteractor.execute(input);
+
+        verify(preferenceDataAccessInterface).loadForUser(userId);
+        verify(preferenceDataAccessInterface).listFavorites(userId);
+
+        GetPreferencesOutputData out = captureGetPreferencesOutput();
+        assertNotNull(out.getErrorMessage());
+        assertEquals("Failed to load favorites", out.getErrorMessage());
+        assertEquals(2.0, out.getRadiusKm());
+        assertEquals(List.of(), out.getFavorites());
+        assertNull(out.getSelectedCategories());
+    }
+
+    /**
+     * Edge case: Exception with null message.
+     */
+    @Test
+    void getPreferences_gatewayThrowsExceptionWithNullMessage_presenterReceivesNullErrorMessage() throws Exception {
+        int userId = 5;
+        GetPreferencesInputData input = new GetPreferencesInputData(userId);
+
+        Exception ex = new Exception((String) null);
+        when(preferenceDataAccessInterface.loadForUser(userId)).thenThrow(ex);
+
+        getPreferencesInteractor.execute(input);
+
+        GetPreferencesOutputData out = captureGetPreferencesOutput();
+        assertNull(out.getErrorMessage());
+        assertEquals(2.0, out.getRadiusKm());
+        assertEquals(List.of(), out.getFavorites());
+        assertNull(out.getSelectedCategories());
+    }
+
+    // ========================================================================
+    // UpdatePreferencesInteractor Tests
+    // ========================================================================
 
     /**
      * Branch 1a: Negative radius triggers validation error.
      */
     @Test
-    void negativeRadius_triggersValidationError() throws Exception {
+    void updatePreferences_negativeRadius_triggersValidationError() throws Exception {
         int userId = 1;
         double invalidRadius = -1.0;
         Map<String, List<String>> categories = new HashMap<>();
@@ -91,11 +236,11 @@ class UpdatePreferencesInteractorTest {
         UpdatePreferencesInputData input = new UpdatePreferencesInputData(
                 userId, invalidRadius, categories);
 
-        interactor.execute(input);
+        updatePreferencesInteractor.execute(input);
 
         verifyNoInteractions(preferenceDataAccessInterface);
 
-        UpdatePreferencesOutputData out = capturePresenterOutput();
+        UpdatePreferencesOutputData out = captureUpdatePreferencesOutput();
         assertFalse(out.isSuccess());
         assertEquals("Radius must be between 0 and 5 km.", out.getMessage());
     }
@@ -104,7 +249,7 @@ class UpdatePreferencesInteractorTest {
      * Branch 1b: Radius greater than 5 triggers validation error.
      */
     @Test
-    void radiusGreaterThan5_triggersValidationError() throws Exception {
+    void updatePreferences_radiusGreaterThan5_triggersValidationError() throws Exception {
         int userId = 2;
         double invalidRadius = 6.0;
         Map<String, List<String>> categories = new HashMap<>();
@@ -113,11 +258,11 @@ class UpdatePreferencesInteractorTest {
         UpdatePreferencesInputData input = new UpdatePreferencesInputData(
                 userId, invalidRadius, categories);
 
-        interactor.execute(input);
+        updatePreferencesInteractor.execute(input);
 
         verifyNoInteractions(preferenceDataAccessInterface);
 
-        UpdatePreferencesOutputData out = capturePresenterOutput();
+        UpdatePreferencesOutputData out = captureUpdatePreferencesOutput();
         assertFalse(out.isSuccess());
         assertEquals("Radius must be between 0 and 5 km.", out.getMessage());
     }
@@ -126,7 +271,7 @@ class UpdatePreferencesInteractorTest {
      * Branch 1c: Radius exactly 5 should be valid (boundary value).
      */
     @Test
-    void radiusExactly5_isValid() throws Exception {
+    void updatePreferences_radiusExactly5_isValid() throws Exception {
         int userId = 3;
         double validRadius = 5.0;
         Map<String, List<String>> categories = new HashMap<>();
@@ -138,12 +283,12 @@ class UpdatePreferencesInteractorTest {
         PreferenceProfile existingProfile = new PreferenceProfile(userId, 2.0);
         when(preferenceDataAccessInterface.loadForUser(userId)).thenReturn(existingProfile);
 
-        interactor.execute(input);
+        updatePreferencesInteractor.execute(input);
 
         verify(preferenceDataAccessInterface).loadForUser(userId);
         verify(preferenceDataAccessInterface).saveForUser(any(PreferenceProfile.class));
 
-        UpdatePreferencesOutputData out = capturePresenterOutput();
+        UpdatePreferencesOutputData out = captureUpdatePreferencesOutput();
         assertTrue(out.isSuccess());
         assertEquals("Preferences saved.", out.getMessage());
     }
@@ -152,7 +297,7 @@ class UpdatePreferencesInteractorTest {
      * Branch 1d: Radius exactly 0 should be valid (boundary value).
      */
     @Test
-    void radiusExactly0_isValid() throws Exception {
+    void updatePreferences_radiusExactly0_isValid() throws Exception {
         int userId = 4;
         double validRadius = 0.0;
         Map<String, List<String>> categories = new HashMap<>();
@@ -164,12 +309,12 @@ class UpdatePreferencesInteractorTest {
         PreferenceProfile existingProfile = new PreferenceProfile(userId, 2.0);
         when(preferenceDataAccessInterface.loadForUser(userId)).thenReturn(existingProfile);
 
-        interactor.execute(input);
+        updatePreferencesInteractor.execute(input);
 
         verify(preferenceDataAccessInterface).loadForUser(userId);
         verify(preferenceDataAccessInterface).saveForUser(any(PreferenceProfile.class));
 
-        UpdatePreferencesOutputData out = capturePresenterOutput();
+        UpdatePreferencesOutputData out = captureUpdatePreferencesOutput();
         assertTrue(out.isSuccess());
     }
 
@@ -177,7 +322,7 @@ class UpdatePreferencesInteractorTest {
      * Branch 2a: Less than 3 sub-categories triggers validation error.
      */
     @Test
-    void lessThan3SubCategories_triggersValidationError() throws Exception {
+    void updatePreferences_lessThan3SubCategories_triggersValidationError() throws Exception {
         int userId = 5;
         double validRadius = 2.5;
         Map<String, List<String>> categories = new HashMap<>();
@@ -186,11 +331,11 @@ class UpdatePreferencesInteractorTest {
         UpdatePreferencesInputData input = new UpdatePreferencesInputData(
                 userId, validRadius, categories);
 
-        interactor.execute(input);
+        updatePreferencesInteractor.execute(input);
 
         verifyNoInteractions(preferenceDataAccessInterface);
 
-        UpdatePreferencesOutputData out = capturePresenterOutput();
+        UpdatePreferencesOutputData out = captureUpdatePreferencesOutput();
         assertFalse(out.isSuccess());
         assertEquals("Please select at least 3 sub-categories.", out.getMessage());
     }
@@ -199,7 +344,7 @@ class UpdatePreferencesInteractorTest {
      * Branch 2b: Exactly 2 sub-categories triggers validation error.
      */
     @Test
-    void exactly2SubCategories_triggersValidationError() throws Exception {
+    void updatePreferences_exactly2SubCategories_triggersValidationError() throws Exception {
         int userId = 6;
         double validRadius = 3.0;
         Map<String, List<String>> categories = new HashMap<>();
@@ -209,11 +354,11 @@ class UpdatePreferencesInteractorTest {
         UpdatePreferencesInputData input = new UpdatePreferencesInputData(
                 userId, validRadius, categories);
 
-        interactor.execute(input);
+        updatePreferencesInteractor.execute(input);
 
         verifyNoInteractions(preferenceDataAccessInterface);
 
-        UpdatePreferencesOutputData out = capturePresenterOutput();
+        UpdatePreferencesOutputData out = captureUpdatePreferencesOutput();
         assertFalse(out.isSuccess());
         assertEquals("Please select at least 3 sub-categories.", out.getMessage());
     }
@@ -222,18 +367,18 @@ class UpdatePreferencesInteractorTest {
      * Branch 2c: Null selectedCategories triggers validation error.
      */
     @Test
-    void nullSelectedCategories_triggersValidationError() throws Exception {
+    void updatePreferences_nullSelectedCategories_triggersValidationError() throws Exception {
         int userId = 7;
         double validRadius = 2.0;
 
         UpdatePreferencesInputData input = new UpdatePreferencesInputData(
                 userId, validRadius, null);
 
-        interactor.execute(input);
+        updatePreferencesInteractor.execute(input);
 
         verifyNoInteractions(preferenceDataAccessInterface);
 
-        UpdatePreferencesOutputData out = capturePresenterOutput();
+        UpdatePreferencesOutputData out = captureUpdatePreferencesOutput();
         assertFalse(out.isSuccess());
         assertEquals("Please select at least 3 sub-categories.", out.getMessage());
     }
@@ -242,7 +387,7 @@ class UpdatePreferencesInteractorTest {
      * Branch 2d: Empty selectedCategories triggers validation error.
      */
     @Test
-    void emptySelectedCategories_triggersValidationError() throws Exception {
+    void updatePreferences_emptySelectedCategories_triggersValidationError() throws Exception {
         int userId = 8;
         double validRadius = 2.0;
         Map<String, List<String>> emptyCategories = new HashMap<>();
@@ -250,11 +395,11 @@ class UpdatePreferencesInteractorTest {
         UpdatePreferencesInputData input = new UpdatePreferencesInputData(
                 userId, validRadius, emptyCategories);
 
-        interactor.execute(input);
+        updatePreferencesInteractor.execute(input);
 
         verifyNoInteractions(preferenceDataAccessInterface);
 
-        UpdatePreferencesOutputData out = capturePresenterOutput();
+        UpdatePreferencesOutputData out = captureUpdatePreferencesOutput();
         assertFalse(out.isSuccess());
         assertEquals("Please select at least 3 sub-categories.", out.getMessage());
     }
@@ -263,7 +408,7 @@ class UpdatePreferencesInteractorTest {
      * Branch 2e: SelectedCategories with null lists should be handled.
      */
     @Test
-    void selectedCategoriesWithNullLists_triggersValidationError() throws Exception {
+    void updatePreferences_selectedCategoriesWithNullLists_triggersValidationError() throws Exception {
         int userId = 9;
         double validRadius = 2.0;
         Map<String, List<String>> categories = new HashMap<>();
@@ -273,11 +418,11 @@ class UpdatePreferencesInteractorTest {
         UpdatePreferencesInputData input = new UpdatePreferencesInputData(
                 userId, validRadius, categories);
 
-        interactor.execute(input);
+        updatePreferencesInteractor.execute(input);
 
         verifyNoInteractions(preferenceDataAccessInterface);
 
-        UpdatePreferencesOutputData out = capturePresenterOutput();
+        UpdatePreferencesOutputData out = captureUpdatePreferencesOutput();
         assertFalse(out.isSuccess());
         assertEquals("Please select at least 3 sub-categories.", out.getMessage());
     }
@@ -286,7 +431,7 @@ class UpdatePreferencesInteractorTest {
      * Branch 2f: Exactly 3 sub-categories should be valid (boundary value).
      */
     @Test
-    void exactly3SubCategories_isValid() throws Exception {
+    void updatePreferences_exactly3SubCategories_isValid() throws Exception {
         int userId = 10;
         double validRadius = 2.5;
         Map<String, List<String>> categories = new HashMap<>();
@@ -298,25 +443,21 @@ class UpdatePreferencesInteractorTest {
         PreferenceProfile existingProfile = new PreferenceProfile(userId, 1.0);
         when(preferenceDataAccessInterface.loadForUser(userId)).thenReturn(existingProfile);
 
-        interactor.execute(input);
+        updatePreferencesInteractor.execute(input);
 
         verify(preferenceDataAccessInterface).loadForUser(userId);
         verify(preferenceDataAccessInterface).saveForUser(any(PreferenceProfile.class));
 
-        UpdatePreferencesOutputData out = capturePresenterOutput();
+        UpdatePreferencesOutputData out = captureUpdatePreferencesOutput();
         assertTrue(out.isSuccess());
         assertEquals("Preferences saved.", out.getMessage());
     }
-
-    // -------------------------------------------------------------------------
-    // Success path
-    // -------------------------------------------------------------------------
 
     /**
      * Branch 3 (happy path): Valid input successfully updates preferences.
      */
     @Test
-    void validInput_updatesPreferencesSuccessfully() throws Exception {
+    void updatePreferences_validInput_updatesPreferencesSuccessfully() throws Exception {
         int userId = 11;
         double newRadius = 3.5;
         Map<String, List<String>> categories = new HashMap<>();
@@ -329,7 +470,7 @@ class UpdatePreferencesInteractorTest {
         PreferenceProfile existingProfile = new PreferenceProfile(userId, 2.0);
         when(preferenceDataAccessInterface.loadForUser(userId)).thenReturn(existingProfile);
 
-        interactor.execute(input);
+        updatePreferencesInteractor.execute(input);
 
         verify(preferenceDataAccessInterface).loadForUser(userId);
         
@@ -342,7 +483,7 @@ class UpdatePreferencesInteractorTest {
         assertEquals(newRadius, savedProfile.getRadiusKm());
         assertEquals(categories, savedProfile.getSelectedCategories());
 
-        UpdatePreferencesOutputData out = capturePresenterOutput();
+        UpdatePreferencesOutputData out = captureUpdatePreferencesOutput();
         assertTrue(out.isSuccess());
         assertEquals("Preferences saved.", out.getMessage());
     }
@@ -351,7 +492,7 @@ class UpdatePreferencesInteractorTest {
      * Branch 3b: Update with valid categories saves preferences successfully.
      */
     @Test
-    void validInputWithValidCategories_savesPreferences() throws Exception {
+    void updatePreferences_validInputWithValidCategories_savesPreferences() throws Exception {
         int userId = 12;
         double newRadius = 2.0;
         Map<String, List<String>> validCategories = new HashMap<>();
@@ -363,7 +504,7 @@ class UpdatePreferencesInteractorTest {
         PreferenceProfile existingProfile = new PreferenceProfile(userId, 1.0);
         when(preferenceDataAccessInterface.loadForUser(userId)).thenReturn(existingProfile);
 
-        interactor.execute(input);
+        updatePreferencesInteractor.execute(input);
 
         ArgumentCaptor<PreferenceProfile> profileCaptor = 
                 ArgumentCaptor.forClass(PreferenceProfile.class);
@@ -373,20 +514,16 @@ class UpdatePreferencesInteractorTest {
         assertNotNull(savedProfile.getSelectedCategories());
         assertEquals(validCategories, savedProfile.getSelectedCategories());
 
-        UpdatePreferencesOutputData out = capturePresenterOutput();
+        UpdatePreferencesOutputData out = captureUpdatePreferencesOutput();
         assertTrue(out.isSuccess());
         assertEquals("Preferences saved.", out.getMessage());
     }
-
-    // -------------------------------------------------------------------------
-    // Exception handling
-    // -------------------------------------------------------------------------
 
     /**
      * Branch 4: Gateway throws exception during loadForUser.
      */
     @Test
-    void gatewayThrowsExceptionOnLoad_presenterReceivesFailureMessage() throws Exception {
+    void updatePreferences_gatewayThrowsExceptionOnLoad_presenterReceivesFailureMessage() throws Exception {
         int userId = 13;
         double validRadius = 2.5;
         Map<String, List<String>> categories = new HashMap<>();
@@ -398,12 +535,12 @@ class UpdatePreferencesInteractorTest {
         when(preferenceDataAccessInterface.loadForUser(userId))
                 .thenThrow(new Exception("Database connection failed"));
 
-        interactor.execute(input);
+        updatePreferencesInteractor.execute(input);
 
         verify(preferenceDataAccessInterface).loadForUser(userId);
         verify(preferenceDataAccessInterface, never()).saveForUser(any());
 
-        UpdatePreferencesOutputData out = capturePresenterOutput();
+        UpdatePreferencesOutputData out = captureUpdatePreferencesOutput();
         assertFalse(out.isSuccess());
         assertEquals("Database connection failed", out.getMessage());
     }
@@ -412,7 +549,7 @@ class UpdatePreferencesInteractorTest {
      * Branch 4b: Gateway throws exception during saveForUser.
      */
     @Test
-    void gatewayThrowsExceptionOnSave_presenterReceivesFailureMessage() throws Exception {
+    void updatePreferences_gatewayThrowsExceptionOnSave_presenterReceivesFailureMessage() throws Exception {
         int userId = 14;
         double validRadius = 2.5;
         Map<String, List<String>> categories = new HashMap<>();
@@ -426,12 +563,12 @@ class UpdatePreferencesInteractorTest {
         doThrow(new Exception("Save operation failed"))
                 .when(preferenceDataAccessInterface).saveForUser(any(PreferenceProfile.class));
 
-        interactor.execute(input);
+        updatePreferencesInteractor.execute(input);
 
         verify(preferenceDataAccessInterface).loadForUser(userId);
         verify(preferenceDataAccessInterface).saveForUser(any(PreferenceProfile.class));
 
-        UpdatePreferencesOutputData out = capturePresenterOutput();
+        UpdatePreferencesOutputData out = captureUpdatePreferencesOutput();
         assertFalse(out.isSuccess());
         assertEquals("Save operation failed", out.getMessage());
     }
@@ -440,7 +577,7 @@ class UpdatePreferencesInteractorTest {
      * Edge case: Exception with null message.
      */
     @Test
-    void gatewayThrowsExceptionWithNullMessage_presenterReceivesNullMessage() throws Exception {
+    void updatePreferences_gatewayThrowsExceptionWithNullMessage_presenterReceivesNullMessage() throws Exception {
         int userId = 15;
         double validRadius = 2.5;
         Map<String, List<String>> categories = new HashMap<>();
@@ -452,11 +589,12 @@ class UpdatePreferencesInteractorTest {
         Exception ex = new Exception((String) null);
         when(preferenceDataAccessInterface.loadForUser(userId)).thenThrow(ex);
 
-        interactor.execute(input);
+        updatePreferencesInteractor.execute(input);
 
-        UpdatePreferencesOutputData out = capturePresenterOutput();
+        UpdatePreferencesOutputData out = captureUpdatePreferencesOutput();
         assertFalse(out.isSuccess());
         assertNull(out.getMessage());
     }
+
 }
 
