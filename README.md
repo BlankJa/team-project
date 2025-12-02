@@ -40,8 +40,8 @@ Core Features:
 
 | Team Member | Implemented Features                                                   |
 | ----------- | ---------------------------------------------------------------------- |
-| **Jacob**   | Login, registration, weather-based travel advice                       |
-| **Ariel Tantra** | Place recommendation based on user preferences + weather support       |
+| **Jacob**   | Login, registration, weather-based travel advice, set preferences      |
+| **Ariel Tantra** | Place recommendation based on user preferences + weather support  |
 | **John**    | Save plan feature & plan generation logic from user inputs             |
 | **Adam**    | API response cleanup and code optimization                             |
 | **Sean**    | Routing, trip sequencing, and navigation flow                          |
