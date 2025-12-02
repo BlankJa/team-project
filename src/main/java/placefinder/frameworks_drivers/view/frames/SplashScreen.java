@@ -59,7 +59,7 @@ public class SplashScreen extends JWindow {
                 
                 System.out.println("Video path: " + videoPath);
                 
-                Media media = new Media(videoPath);
+                final Media media = new Media(videoPath);
                 
                 media.setOnError(() -> {
                     System.err.println("Media loading error: " + media.getError());
@@ -93,8 +93,8 @@ public class SplashScreen extends JWindow {
                 fxPanel.setScene(scene);
                 
                 mediaPlayer.setOnReady(() -> {
-                    double videoWidth = media.getWidth();
-                    double videoHeight = media.getHeight();
+                    final double videoWidth = media.getWidth();
+                    final double videoHeight = media.getHeight();
                     
                     // If video dimensions are valid, adjust window and view size
                     if (videoWidth > 0 && videoHeight > 0) {

@@ -1,15 +1,13 @@
 package placefinder.usecases.buildplan;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import placefinder.entities.*;
 import placefinder.usecases.dataacessinterfaces.GeocodingDataAccessInterface;
 import placefinder.usecases.dataacessinterfaces.PreferenceDataAccessInterface;
-import placefinder.usecases.searchplaces.SearchPlacesInteractor;
+import placefinder.usecases.dataacessinterfaces.RouteDataAccessInterface;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -19,8 +17,9 @@ import static org.mockito.Mockito.*;
 /**
  * Unit tests for {@link BuildPlanInteractor}.
  *
- * Uses Mockito to mock gateways and entities, and a simple presenter that
- * captures the last BuildPlanOutputData.
+ * These tests avoid mocking entity classes because Mockito cannot
+ * instrument POJOs on Java 24 with inline mocks.
+ * Only gateways and presenters are mocked.
  */
 class BuildPlanInteractorTest {
 
@@ -38,27 +37,24 @@ class BuildPlanInteractorTest {
 
     @Test
     void noSelectedPlaces_returnsError() throws Exception {
-        PreferenceDataAccessInterface prefGateway = mock(PreferenceDataAccessInterface.class);
-        GeocodingDataAccessInterface geocodingDataAccessInterface = mock(GeocodingDataAccessInterface.class);
+        PreferenceDataAccessInterface pref = mock(PreferenceDataAccessInterface.class);
+        GeocodingDataAccessInterface geo = mock(GeocodingDataAccessInterface.class);
+        RouteDataAccessInterface route = mock(RouteDataAccessInterface.class);
 
         CapturingPresenter presenter = new CapturingPresenter();
 
         BuildPlanInteractor interactor =
-                new BuildPlanInteractor(prefGateway, geocodingDataAccessInterface, presenter);
+                new BuildPlanInteractor(pref, geo, route, presenter);
 
         BuildPlanInputData input = new BuildPlanInputData(
-                1,
-                "Toronto",
-                "2025-11-19",
-                "09:00",
-                List.of(),
-                10);
+                1, "Toronto", "2025-11-19", "09:00",
+                List.of(), null
+        );
 
         interactor.execute(input);
         BuildPlanOutputData out = presenter.getOutput();
 
         assertNull(out.getPlan());
-        assertFalse(out.isTruncated());
         assertEquals("Please select at least one place.", out.getErrorMessage());
     }
 
@@ -66,25 +62,22 @@ class BuildPlanInteractorTest {
     void geocoderFails_returnsError() throws Exception {
         PreferenceDataAccessInterface pref = mock(PreferenceDataAccessInterface.class);
         GeocodingDataAccessInterface geo = mock(GeocodingDataAccessInterface.class);
+        RouteDataAccessInterface route = mock(RouteDataAccessInterface.class);
 
         when(geo.geocode("Nowhere")).thenReturn(null);
 
         CapturingPresenter presenter = new CapturingPresenter();
 
         BuildPlanInteractor interactor =
-                new BuildPlanInteractor(pref, geo, presenter);
+                new BuildPlanInteractor(pref, geo, route, presenter);
 
         BuildPlanInputData input = new BuildPlanInputData(
-                1,
-                "Nowhere",
-                "2025-11-19",
-                "09:00",
-                List.of(mock(Place.class)),
-                10
+                1, "Nowhere", "2025-11-19", "09:00",
+                List.of(new Place("1","A","B",0,0,0,null,List.of())),
+                null
         );
 
         interactor.execute(input);
-
         BuildPlanOutputData out = presenter.getOutput();
 
         assertNull(out.getPlan());
@@ -92,118 +85,112 @@ class BuildPlanInteractorTest {
     }
 
     @Test
-    void success_createsPlanStopsSequentially() throws Exception {
+    void routeNull_returnsError() throws Exception {
         PreferenceDataAccessInterface pref = mock(PreferenceDataAccessInterface.class);
         GeocodingDataAccessInterface geo = mock(GeocodingDataAccessInterface.class);
+        RouteDataAccessInterface routeGateway = mock(RouteDataAccessInterface.class);
 
-        // pref profile
-        PreferenceProfile profile = mock(PreferenceProfile.class);
-        when(profile.getRadiusKm()).thenReturn(5.0);
-        when(profile.getSelectedCategories()).thenReturn(Map.of());
+        // Real objects (no mocking!)
+        GeocodeResult geocode = new GeocodeResult(10.0, 20.0, "Test Location");
+        when(geo.geocode("Toronto")).thenReturn(geocode);
+
+        PreferenceProfile profile =
+                new PreferenceProfile(1, 7.5, Map.of());
         when(pref.loadForUser(1)).thenReturn(profile);
 
-        // geocode OK
-        GeocodeResult gr = mock(GeocodeResult.class);
-        when(gr.getFormattedAddress()).thenReturn("Toronto, ON");
-        when(geo.geocode("Toronto")).thenReturn(gr);
-
-        // two places
-        Place p1 = mock(Place.class);
-        Place p2 = mock(Place.class);
+        when(routeGateway.computeRoute(any(), any(), any())).thenReturn(null);
 
         CapturingPresenter presenter = new CapturingPresenter();
 
         BuildPlanInteractor interactor =
-                new BuildPlanInteractor(pref, geo, presenter);
+                new BuildPlanInteractor(pref, geo, routeGateway, presenter);
 
         BuildPlanInputData input = new BuildPlanInputData(
-                1,
-                "Toronto",
-                "2025-11-19",
-                "09:00",
-                List.of(p1, p2),
-                null
+                1, "Toronto", "2025-11-19", "09:00",
+                List.of(new Place("1","A","B",0,0,0,null,List.of())), null
+        );
+
+        interactor.execute(input);
+        BuildPlanOutputData out = presenter.getOutput();
+
+        assertNull(out.getPlan());
+        assertEquals("Could not find route between locations.", out.getErrorMessage());
+    }
+
+    @Test
+    void success_buildsPlanCorrectly() throws Exception {
+        PreferenceDataAccessInterface pref = mock(PreferenceDataAccessInterface.class);
+        GeocodingDataAccessInterface geo = mock(GeocodingDataAccessInterface.class);
+        RouteDataAccessInterface routeGateway = mock(RouteDataAccessInterface.class);
+
+        // Real geocode result
+        GeocodeResult geocode = new GeocodeResult(43.7, -79.4, "Toronto, ON");
+        when(geo.geocode("Toronto")).thenReturn(geocode);
+
+        // Real profile
+        PreferenceProfile profile =
+                new PreferenceProfile(1, 5.0, Map.of("food", List.of("cafe")));
+        when(pref.loadForUser(1)).thenReturn(profile);
+
+        // Real places
+        Place p1 = new Place("1","CN Tower","A",1,1,0,null,List.of());
+        Place p2 = new Place("2","ROM","B",1,1,0,null,List.of());
+
+        // Real PlanStops for Route
+        PlanStop s1 = new PlanStop(1, p1, LocalTime.of(9,0), LocalTime.of(10,0));
+        PlanStop s2 = new PlanStop(2, p2, LocalTime.of(10,0), LocalTime.of(11,0));
+
+        Route route = new Route(List.of(s1, s2), List.of(), 1000, 2.0, "encoded");
+        when(routeGateway.computeRoute(any(), any(), any())).thenReturn(route);
+
+        CapturingPresenter presenter = new CapturingPresenter();
+
+        BuildPlanInteractor interactor =
+                new BuildPlanInteractor(pref, geo, routeGateway, presenter);
+
+        BuildPlanInputData input = new BuildPlanInputData(
+                1, "Toronto", "2025-11-19", "09:00", List.of(p1, p2), null
         );
 
         interactor.execute(input);
         BuildPlanOutputData out = presenter.getOutput();
 
         assertNotNull(out.getPlan());
-        assertFalse(out.isTruncated());
         assertNull(out.getErrorMessage());
 
-        List<PlanStop> stops = out.getPlan().getRoute().getStops();
-        assertEquals(2, stops.size());
-        assertEquals(LocalTime.of(9,0), stops.get(0).getStartTime());
-        assertEquals(LocalTime.of(10,0), stops.get(0).getEndTime());
-        assertEquals(LocalTime.of(10,0), stops.get(1).getStartTime());
-        assertEquals(LocalTime.of(11,0), stops.get(1).getEndTime());
+        Plan plan = out.getPlan();
+
+        assertEquals(1, plan.getUserId());
+        assertEquals(LocalDate.of(2025,11,19), plan.getDate());
+        assertEquals(LocalTime.of(9,0), plan.getStartTime());
+        assertEquals("Toronto, ON", plan.getOriginAddress());
+        assertEquals(5.0, plan.getSnapshotRadiusKm());
+        assertEquals(Map.of("food", List.of("cafe")), plan.getSnapshotCategories());
+
+        assertEquals(2, plan.getRoute().getStops().size());
     }
 
     @Test
-    void truncatedStops_whenEndPastDay() throws Exception {
+    void exceptionDuringExecution_returnsExceptionMessage() throws Exception {
         PreferenceDataAccessInterface pref = mock(PreferenceDataAccessInterface.class);
         GeocodingDataAccessInterface geo = mock(GeocodingDataAccessInterface.class);
+        RouteDataAccessInterface route = mock(RouteDataAccessInterface.class);
 
-        // Profile
-        PreferenceProfile profile = mock(PreferenceProfile.class);
-        when(profile.getRadiusKm()).thenReturn(5.0);
-        when(profile.getSelectedCategories()).thenReturn(Map.of());
-        when(pref.loadForUser(1)).thenReturn(profile);
-
-        // geocode OK
-        GeocodeResult gr = mock(GeocodeResult.class);
-        when(geo.geocode("Toronto")).thenReturn(gr);
-
-        // 5 places starting at 23:00 → only 1 fits
-        Place p = mock(Place.class);
-
-        CapturingPresenter presenter = new CapturingPresenter();
-
-        BuildPlanInteractor interactor =
-                new BuildPlanInteractor(pref, geo, presenter);
-
-        BuildPlanInputData input = new BuildPlanInputData(
-                1,
-                "Toronto",
-                "2025-11-19",
-                "23:00",
-                List.of(p, p, p, p),
-                null
-        );
-
-        interactor.execute(input);
-        BuildPlanOutputData out = presenter.getOutput();
-
-        assertTrue(out.isTruncated(), "Stops should be truncated");
-        assertEquals(1, out.getPlan().getRoute().getStops().size());
-    }
-
-    @Test
-    void exceptionCaught_returnsError() throws Exception {
-        PreferenceDataAccessInterface pref = mock(PreferenceDataAccessInterface.class);
-        GeocodingDataAccessInterface geo = mock(GeocodingDataAccessInterface.class);
-
-        // throw exception purposely
         when(geo.geocode(anyString())).thenThrow(new RuntimeException("boom"));
 
         CapturingPresenter presenter = new CapturingPresenter();
 
         BuildPlanInteractor interactor =
-                new BuildPlanInteractor(pref, geo, presenter);
+                new BuildPlanInteractor(pref, geo, route, presenter);
 
         BuildPlanInputData input = new BuildPlanInputData(
-                1,
-                "X",
-                "2025-11-19",
-                "09:00",
-                List.of(mock(Place.class)),
-                null
+                1, "X", "2025-11-19", "09:00",
+                List.of(new Place("1","A","B",0,0,0,null,List.of())), null
         );
 
         interactor.execute(input);
-
         BuildPlanOutputData out = presenter.getOutput();
+
         assertNull(out.getPlan());
         assertEquals("boom", out.getErrorMessage());
     }
