@@ -1,6 +1,8 @@
 package placefinder.usecases.dataacessinterfaces;
 
 import placefinder.entities.Plan;
+import placefinder.entities.PlanStop;
+
 import java.util.List;
 
 /**

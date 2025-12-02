@@ -38,6 +38,40 @@ public class Database {
                     "verification_code TEXT" +
                     ")");
 
+            // Tables to persist routes, legs and steps associated with a plan
+            stmt.execute("CREATE TABLE IF NOT EXISTS plan_routes (" +
+                    "plan_id INTEGER PRIMARY KEY," +
+                    "distance INTEGER," +
+                    "duration REAL," +
+                    "encoded_polyline TEXT," +
+                    "FOREIGN KEY(plan_id) REFERENCES plans(id) ON DELETE CASCADE" +
+                    ")");
+
+            stmt.execute("CREATE TABLE IF NOT EXISTS plan_legs (" +
+                    "plan_id INTEGER NOT NULL," +
+                    "leg_index INTEGER NOT NULL," +
+                    "distance INTEGER," +
+                    "duration REAL," +
+                    "encoded_polyline TEXT," +
+                    "start_seq INTEGER NOT NULL," +
+                    "end_seq INTEGER NOT NULL," +
+                    "PRIMARY KEY(plan_id, leg_index)," +
+                    "FOREIGN KEY(plan_id) REFERENCES plans(id) ON DELETE CASCADE" +
+                    ")");
+
+            stmt.execute("CREATE TABLE IF NOT EXISTS plan_steps (" +
+                    "plan_id INTEGER NOT NULL," +
+                    "leg_index INTEGER NOT NULL," +
+                    "step_index INTEGER NOT NULL," +
+                    "distance INTEGER," +
+                    "duration REAL," +
+                    "nav_instruction TEXT," +
+                    "PRIMARY KEY(plan_id, leg_index, step_index)," +
+                    "FOREIGN KEY(plan_id, leg_index) REFERENCES plan_legs(plan_id, leg_index) ON DELETE CASCADE" +
+                    ")");
+
+
+
             // Backward compatibility: add columns if DB existed before we added them
             try {
                 stmt.execute("ALTER TABLE users ADD COLUMN is_verified INTEGER NOT NULL DEFAULT 0");

@@ -1,6 +1,7 @@
 package placefinder.usecases.dataacessinterfaces;
 
 import placefinder.entities.GeocodeResult;
+import placefinder.entities.Place;
 import placefinder.entities.PlanStop;
 import placefinder.entities.Route;
 
@@ -14,9 +15,9 @@ public interface RouteDataAccessInterface {
      *
      * @param origin The location data of the start/end location
      * @param startTime The starting time for the route
-     * @param stops List of the planned stops locations
+     * @param places List of the planned stops locations
      * @return The optimal route as determined by the API
      * @throws Exception if the API call fails
      */
-    Route computeRoute(GeocodeResult origin, LocalTime startTime, List<PlanStop> stops) throws Exception;
+    Route computeRoute(GeocodeResult origin, LocalTime startTime, List<Place> places) throws Exception;
 }
