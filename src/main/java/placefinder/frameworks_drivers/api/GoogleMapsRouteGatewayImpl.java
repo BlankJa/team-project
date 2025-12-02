@@ -7,8 +7,6 @@ import com.google.gson.JsonParser;
 import placefinder.entities.*;
 import placefinder.usecases.dataacessinterfaces.RouteDataAccessInterface;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -81,75 +79,80 @@ public class GoogleMapsRouteGatewayImpl implements RouteDataAccessInterface {
             JsonObject legObj = routeObj.getAsJsonArray("legs").get(legNum).getAsJsonObject();
 
             // creating list of steps for leg
+            // Build each Step
             List<Step> steps = new ArrayList<>();
-            for (int stepNum = 0; stepNum < legObj.getAsJsonArray("steps").size(); stepNum++) {
-                JsonObject stepObj = legObj.getAsJsonArray("steps").get(stepNum).getAsJsonObject();
+            JsonArray stepsArray = legObj.getAsJsonArray("steps");
+            for (JsonElement elem : stepsArray) {
+                JsonObject stepObj = elem.getAsJsonObject();
                 JsonObject navInst = stepObj.getAsJsonObject("navigationInstruction");
-                if (navInst == null) {
-                    Step step = new Step (stepObj.getAsJsonPrimitive("distanceMeters").getAsInt(),
-                            Double.parseDouble(stepObj.getAsJsonPrimitive("staticDuration")
-                                    .getAsString().replace("s", "")),
-                            "Instruction unavailable.");
-                    steps.add(step);
-                }
-                else{
-                    Step step = new Step (stepObj.getAsJsonPrimitive("distanceMeters").getAsInt(),
-                            Double.parseDouble(stepObj.getAsJsonPrimitive("staticDuration")
-                                    .getAsString().replace("s", "")),
-                            navInst.getAsJsonPrimitive("instructions").getAsString());
-                    steps.add(step);
-                }
 
+                String instr = navInst != null
+                        ? navInst.getAsJsonPrimitive("instructions").getAsString()
+                        : "Instruction unavailable.";
+
+                Step step = new StepBuilder()
+                        .withDistance(stepObj.getAsJsonPrimitive("distanceMeters").getAsInt())
+                        .withDuration(Double.parseDouble(stepObj.getAsJsonPrimitive("staticDuration")
+                                .getAsString().replace("s", "")))
+                        .withInstruction(instr)
+                        .build();
+
+                steps.add(step);
             }
 
             double legDuration = Double.parseDouble(legObj.getAsJsonPrimitive("duration").getAsString()
                     .replace("s", ""));
+
             // creating new Leg object and adding to list
+            PlanStop startStop;
+            PlanStop endStop;
+            // creating stops between legs
             // first leg
             if (legNum == 0) {
-                PlanStop firstStop = new PlanStop(legNum,
+                startStop = originStop;
+                endStop = new PlanStop(legNum,
                         order.get(legNum),
                         startTime.plusSeconds((long) legDuration),
                         startTime.plusSeconds((long) legDuration).plusHours(1));
-                Leg leg = createLeg(legObj, legDuration, originStop, firstStop, steps);
-                routeStops.add(firstStop);
-                legs.add(leg);
+                routeStops.add(endStop);
             }
             // last leg
             else if (legNum == routeObj.getAsJsonArray("legs").size() - 1) {
-                Leg leg = createLeg(legObj, legDuration, legs.get(legNum - 1).getEndLocation(), originStop, steps);
-                legs.add(leg);
+                startStop = legs.get(legNum - 1).getEndLocation();
+                endStop = originStop;
             }
             else {
-                PlanStop lastStop = legs.get(legNum - 1).getEndLocation();
-                PlanStop nextStop = new PlanStop(legNum,
+                startStop = legs.get(legNum - 1).getEndLocation();
+                endStop = new PlanStop(legNum,
                         order.get(legNum),
-                        lastStop.getEndTime().plusSeconds((long) legDuration),
-                        lastStop.getEndTime().plusSeconds((long) legDuration).plusHours(1));
-                Leg leg = createLeg(legObj, legDuration, lastStop, nextStop, steps);
-                routeStops.add(nextStop);
-                legs.add(leg);
+                        startStop.getEndTime().plusSeconds((long) legDuration),
+                        startStop.getEndTime().plusSeconds((long) legDuration).plusHours(1));
+                routeStops.add(endStop);
             }
+            // building new leg
+            Leg leg = new LegBuilder()
+                    .withDistance(legObj.getAsJsonPrimitive("distanceMeters").getAsInt())
+                    .withDuration(legDuration)
+                    .withEncodedPolyline(
+                            legObj.getAsJsonObject("polyline").getAsJsonPrimitive("encodedPolyline").getAsString())
+                    .withStartLocation(startStop)
+                    .withEndLocation(endStop)
+                    .withSteps(steps)
+                    .build();
+            legs.add(leg);
         }
 
         // creating route
-        return new Route(routeStops,
-                legs,
-                routeObj.getAsJsonPrimitive("distanceMeters").getAsInt(),
-                Double.parseDouble(routeObj.getAsJsonPrimitive("duration")
-                        .getAsString().replace("s", "")),
-                routeObj.getAsJsonObject("polyline")
-                        .getAsJsonPrimitive("encodedPolyline").getAsString());
-    }
+        return new RouteBuilder()
+                .withStops(routeStops)
+                .withLegs(legs)
+                .withDistance(routeObj.getAsJsonPrimitive("distanceMeters").getAsInt())
+                .withDuration(Double.parseDouble(
+                        routeObj.getAsJsonPrimitive("duration").getAsString().replace("s", "")))
+                .withEncodedPolyline(
+                        routeObj.getAsJsonObject("polyline").getAsJsonPrimitive("encodedPolyline").getAsString())
+                .build();
 
-    private static Leg createLeg(JsonObject legObj, double duration, PlanStop start, PlanStop end, List<Step> steps) {
-        return new Leg(legObj.getAsJsonPrimitive("distanceMeters").getAsInt(),
-                duration,
-                legObj.getAsJsonObject("polyline").getAsJsonPrimitive("encodedPolyline")
-                        .getAsString(),
-                start,
-                end,
-                steps);
     }
 
     private JsonObject placeToWaypoint(Place place){
