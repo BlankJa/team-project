@@ -1,10 +1,10 @@
 package placefinder.usecases.saveplan;
 
+import placefinder.entities.Leg;
 import placefinder.entities.Plan;
 import placefinder.entities.Place;
 import placefinder.entities.PlanStop;
-import placefinder.entities.RouteOld;
-
+import placefinder.entities.Route;
 import placefinder.usecases.dataacessinterfaces.PlanDataAccessInterface;
 
 import org.junit.jupiter.api.Test;
@@ -148,7 +148,10 @@ class SavePlanInteractorTest {
         final SavePlanInteractor interactor = new SavePlanInteractor(gateway, presenter);
 
         final Plan plan = buildValidPlan();
-        plan.setRoute(new RouteOld(Collections.emptyList()));
+        // Route with no stops.
+        final Route emptyRoute =
+                new Route(Collections.emptyList(), Collections.emptyList(), 0, 0.0, null);
+        plan.setRoute(emptyRoute);
 
         final SavePlanInputData inputData =
                 new SavePlanInputData(plan, "Name");
@@ -208,7 +211,8 @@ class SavePlanInteractorTest {
         final List<PlanStop> stops = new ArrayList<>();
         stops.add(stop);
 
-        final RouteOld route = new RouteOld(stops);
+        final List<Leg> legs = new ArrayList<>();
+        final Route route = new Route(stops, legs, 1000, 3600.0, "encoded");
 
         final Map<String, List<String>> snapshotCategories = new HashMap<>();
         snapshotCategories.put("museum", Collections.singletonList("art"));
