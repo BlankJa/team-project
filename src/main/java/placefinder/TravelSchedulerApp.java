@@ -48,6 +48,9 @@ import placefinder.usecases.weatheradvice.*;
 // verify email
 import placefinder.usecases.verify.*;
 
+// logging
+import placefinder.usecases.logging.SwitchablePlacesLogger;
+
 // interface adapters
 import placefinder.interface_adapters.controllers.*;
 import placefinder.interface_adapters.viewmodels.*;
@@ -73,7 +76,11 @@ public class TravelSchedulerApp {
         PreferenceDataAccessInterface preferenceDataAccessInterface = new SqlitePreferenceDataAccess();
         PlanDataAccessInterface planDataAccessInterface = new SqlitePlanDataAccess();
         GeocodingDataAccessInterface geocodingDataAccessInterface = new OpenCageGeocodingGateway();
-        PlacesDataAccessInterface placesDataAccessInterface = new GeoApifyGatewayImpl();
+
+        // Create switchable logger - starts with console logging enabled
+        SwitchablePlacesLogger placesLogger = new SwitchablePlacesLogger(true);
+
+        PlacesDataAccessInterface placesDataAccessInterface = new GeoApifyGatewayImpl(placesLogger);
         WeatherDataAccessInterface weatherDataAccessInterface = new OpenMeteoWeatherGatewayImpl();
 
         EmailDataAccessInterface emailDataAccessInterface = new SmtpEmailDataAccess(
@@ -245,7 +252,8 @@ public class TravelSchedulerApp {
                     planCreationVM,
                     dashboardVM,
                     planDetailsVM,
-                    weatherAdviceVM
+                    weatherAdviceVM,
+                    placesLogger
             );
 
             splash.showSplash(() -> frame.setVisible(true));
