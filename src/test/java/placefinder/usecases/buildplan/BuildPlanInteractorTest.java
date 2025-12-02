@@ -91,7 +91,7 @@ class BuildPlanInteractorTest {
 
     /**
      * If geocoding fails (returns null), the interactor should return an
-     * appropriate error and not attempt to build a route.
+     * appropriate error and should not attempt to build a route.
      */
     @Test
     void geocoderFails_returnsError() throws Exception {
