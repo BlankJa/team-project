@@ -5,8 +5,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import placefinder.entities.PasswordUtil;
 import placefinder.entities.User;
-import placefinder.usecases.ports.EmailGateway;
-import placefinder.usecases.ports.UserGateway;
+import placefinder.usecases.dataacessinterfaces.EmailDataAccessInterface;
+import placefinder.usecases.dataacessinterfaces.UserDataAccessInterface;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -38,10 +38,10 @@ class RegisterInteractorTest {
     // -------------------------------------------------------------------------
 
     /** Persistence port used by the interactor (mock). */
-    private UserGateway userGateway;
+    private UserDataAccessInterface userGateway;
 
     /** Email gateway used by the interactor (mock). */
-    private EmailGateway emailGateway;
+    private EmailDataAccessInterface emailGateway;
 
     /** Presenter / output boundary used by the interactor (mock). */
     private RegisterOutputBoundary presenter;
@@ -55,8 +55,8 @@ class RegisterInteractorTest {
 
     @BeforeEach
     void setUp() {
-        userGateway = mock(UserGateway.class);
-        emailGateway = mock(EmailGateway.class);
+        userGateway = mock(UserDataAccessInterface.class);
+        emailGateway = mock(EmailDataAccessInterface.class);
         presenter   = mock(RegisterOutputBoundary.class);
         interactor  = new RegisterInteractor(userGateway, presenter, emailGateway);
     }
