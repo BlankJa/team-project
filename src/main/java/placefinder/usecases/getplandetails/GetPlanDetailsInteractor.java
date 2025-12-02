@@ -5,7 +5,6 @@ import placefinder.usecases.dataacessinterfaces.PlanDataAccessInterface;
 
 /**
  * Interactor responsible for retrieving detailed information about a specific plan.
- *
  * Behaviour:
  * - Requests a full plan (including stops) from the data gateway.
  * - Passes the result to the output boundary for presentation.
@@ -13,10 +12,10 @@ import placefinder.usecases.dataacessinterfaces.PlanDataAccessInterface;
  */
 public class GetPlanDetailsInteractor implements GetPlanDetailsInputBoundary {
 
-    /** Gateway abstraction used to load plans from the data layer */
+    /** Gateway abstraction used to load plans from the data layer. */
     private final PlanDataAccessInterface planDataAccessInterface;
 
-    /** Output presenter that receives the formatted result */
+    /** Output presenter that receives the formatted result. */
     private final GetPlanDetailsOutputBoundary presenter;
 
     /**
@@ -33,7 +32,6 @@ public class GetPlanDetailsInteractor implements GetPlanDetailsInputBoundary {
 
     /**
      * Executes the use case to load a plan with all stops.
-     *
      * Flow:
      * 1. Request the full plan from the gateway using its ID.
      * 2. If no plan exists → presenter receives null + an error message.
@@ -43,7 +41,7 @@ public class GetPlanDetailsInteractor implements GetPlanDetailsInputBoundary {
     @Override
     public void execute(GetPlanDetailsInputData inputData) {
         try {
-            Plan plan = planDataAccessInterface.findPlanWithStops(inputData.getPlanId());
+            final Plan plan = planDataAccessInterface.findPlanWithStops(inputData.getPlanId());
 
             if (plan == null) {
                 presenter.present(new GetPlanDetailsOutputData(null, "Plan not found."));
